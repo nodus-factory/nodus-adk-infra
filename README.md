@@ -45,6 +45,27 @@ All services run with **live reload** and **bind-mounted source code** for insta
 
 ## Quick Start
 
+### For New Team Members
+
+**Automatic Setup (Recommended):**
+
+```bash
+# Download and run bootstrap script
+curl -O https://raw.githubusercontent.com/nodus-factory/nodus-adk-infra/main/bootstrap.sh
+chmod +x bootstrap.sh
+./bootstrap.sh
+```
+
+This will:
+- Clone all 7 repositories
+- Setup the workspace
+- Configure git remotes
+- Run initial setup
+
+**Manual Setup:**
+
+See [Setup Guide](docs/SETUP.md) for detailed instructions.
+
 ### Prerequisites
 
 - Docker Desktop or Docker Engine + Docker Compose
@@ -52,10 +73,10 @@ All services run with **live reload** and **bind-mounted source code** for insta
 - 8GB+ RAM recommended
 - Ports: 5001, 5002, 5432, 6333, 6379, 7443, 8080, 9000, 9001
 
-### Setup
+### Starting DEVSTACK
 
 ```bash
-# Clone this repo (should already be in nodus-os-adk)
+# If already have the repos
 cd nodus-os-adk/nodus-adk-infra
 
 # Run setup script
