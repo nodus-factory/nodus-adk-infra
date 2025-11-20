@@ -52,10 +52,11 @@ services:
     networks:
       - nodus-adk-internal
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/6333' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
 
   minio:
     image: minio/minio:latest
@@ -86,11 +87,15 @@ services:
       context: ../nodus-backoffice
       dockerfile: Dockerfile
     container_name: nodus-adk-backoffice
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
       REDIS_URL: redis://redis:6379/0
       NODE_ENV: development
       PORT: 5001
+      JWT_JWKS_URL: http://localhost:5001/.well-known/jwks.json
+      JWT_ISSUER: backoffice
+      JWT_AUDIENCE: backoffice
     ports:
       - "5001:5001"
     volumes:
@@ -104,7 +109,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: npm run dev
+    user: root
+    entrypoint: []
+    command: sh -c "npm install && npm run dev"
 
   llibreta:
     build:
@@ -113,16 +120,18 @@ services:
     container_name: nodus-adk-llibreta
     environment:
       DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
+      AUTH_DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
       REDIS_URL: redis://redis:6379/0
       BACKOFFICE_URL: http://backoffice:5001
       ADK_RUNTIME_URL: http://adk-runtime:8080
+      PERSONAL_ASSISTANT_ENGINE: ${PERSONAL_ASSISTANT_ENGINE:-graph}
       NODE_ENV: development
       PORT: 5002
     ports:
       - "5002:5002"
     volumes:
       - ../nodus-llibreta:/app
-      - /app/node_modules
+      - llibreta_node_modules:/app/node_modules
     networks:
       - nodus-adk-internal
       - nodus-adk-edge
@@ -133,7 +142,8 @@ services:
         condition: service_healthy
       backoffice:
         condition: service_started
-    command: npm run dev
+    user: "0:0"
+    command: sh -c "chown -R 1000:1000 /app/node_modules 2>/dev/null || true && chown -R 1000:1000 /app 2>/dev/null || true && su node -c 'cd /app && npm install --include=dev && npm run dev:simple'"
 
   mcp-gateway:
     build:
@@ -157,10 +167,41 @@ services:
         condition: service_healthy
       backoffice:
         condition: service_started
+    command: sh -c "npm install --include=dev && npm run dev"
 
   # ============================================================================
   # ADK Services (from new repos)
   # ============================================================================
+
+  adk-web:
+    build:
+      context: ../nodus-adk-agents
+      dockerfile: Dockerfile.dev
+    container_name: nodus-adk-web
+    environment:
+      DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
+      REDIS_URL: redis://redis:6379/0
+      BACKOFFICE_URL: http://backoffice:5001
+      MCP_GATEWAY_URL: http://mcp-gateway:7443
+      QDRANT_URL: http://qdrant:6333
+      LOG_LEVEL: INFO
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../nodus-adk-agents:/app
+    networks:
+      - nodus-adk-internal
+      - nodus-adk-edge
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backoffice:
+        condition: service_started
+      mcp-gateway:
+        condition: service_started
 
   adk-runtime:
     build:
@@ -173,9 +214,12 @@ services:
       BACKOFFICE_URL: http://backoffice:5001
       MCP_GATEWAY_URL: http://mcp-gateway:7443
       QDRANT_URL: http://qdrant:6333
-      ADK_MODEL: gemini-2.0-flash-exp
-      LOG_LEVEL: DEBUG
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      ADK_MODEL: ${ADK_MODEL:-gemini-2.0-flash-exp}
+      ADK_PROJECT_ID: ${ADK_PROJECT_ID:-}
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
       PORT: 8080
+      CORS_ORIGINS: http://localhost:5002,http://localhost:5001
     ports:
       - "8080:8080"
     volumes:
@@ -219,4 +263,6 @@ volumes:
     name: nodus-adk-qdrant-data
   minio_data:
     name: nodus-adk-minio-data
+  llibreta_node_modules:
+    name: nodus-adk-llibreta-node-modules
 
