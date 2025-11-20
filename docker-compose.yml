@@ -217,13 +217,15 @@ services:
       QDRANT_API_KEY: ${QDRANT_API_KEY:-}
       ADK_MODEL: ${ADK_MODEL:-gemini-2.0-flash-exp}
       ADK_PROJECT_ID: ${ADK_PROJECT_ID:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
       PORT: 8080
-      CORS_ORIGINS: http://localhost:5002,http://localhost:5001
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5002,http://localhost:5001}
     ports:
       - "8080:8080"
     volumes:
       - ../nodus-adk-runtime/src:/app/src
+      - ../nodus-adk-agents:/nodus-adk-agents
     networks:
       - nodus-adk-internal
     depends_on:
