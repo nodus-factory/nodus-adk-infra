@@ -91,6 +91,9 @@ services:
     environment:
       DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
       REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       NODE_ENV: development
       PORT: 5001
       JWT_JWKS_URL: http://localhost:5001/.well-known/jwks.json
