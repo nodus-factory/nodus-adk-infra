@@ -31,3 +31,7 @@ temp/
 data/
 
 
+
+# Backup files
+.env.bak
+.env.bak*
