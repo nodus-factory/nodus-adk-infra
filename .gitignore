@@ -25,4 +25,9 @@ Thumbs.db
 tmp/
 temp/
 
+# Data directories (Docker bind mounts)
+# These contain PostgreSQL, Redis, Qdrant, MinIO, Langfuse data
+# Should NOT be committed (large, sensitive, backed up separately)
+data/
+
 
