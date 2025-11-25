@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS users (
     role_id INTEGER DEFAULT 2 REFERENCES roles(id),
     tenant_id INTEGER DEFAULT 1 REFERENCES tenants(id),
     active BOOLEAN DEFAULT TRUE,
+    name TEXT,  -- Full name for backward compatibility with backoffice schema
     quota INTEGER DEFAULT 100,
     organization VARCHAR(255),
     created_at TIMESTAMP DEFAULT NOW(),
@@ -92,10 +93,10 @@ CREATE TABLE IF NOT EXISTS users (
 -- Seed default users
 -- Password for 'quirze' is 'holaquirze' (hashed)
 -- Password for 'admin' is 'admin123' (hashed)
-INSERT INTO users (id, username, password, email, first_name, last_name, role, role_id, tenant_id, active, quota)
+INSERT INTO users (id, username, password, email, first_name, last_name, name, role, role_id, tenant_id, active, quota)
 VALUES 
-    (12, 'quirze', '57aaf0d30f8070063a9c28519decf14b9f9dd6254e44d02e1cf8213b2ee483d6a2915d4842a1bbfbe345cc77b79ac3a6c998be69a6fd1e330dc91429e28c2a8a.cc973fbeb0436537606407ff6559f097', 'quirze@mynodus.com', 'Quirze', 'Salomó', 'admin', 1, 1, TRUE, 1000),
-    (1, 'admin', '93f66ceef0f855fb9735f020ff491a9ab668e7fc21bc8cf048f8070036689d4875e5807b008491986c75d8adb808716491524733206b1529376fbfbe22e443cc.2854b49d149c1e5037c0420024db6c05', 'admin@mynodus.com', 'Admin', 'User', 'admin', 1, 1, TRUE, 1000)
+    (12, 'quirze', '57aaf0d30f8070063a9c28519decf14b9f9dd6254e44d02e1cf8213b2ee483d6a2915d4842a1bbfbe345cc77b79ac3a6c998be69a6fd1e330dc91429e28c2a8a.cc973fbeb0436537606407ff6559f097', 'quirze@mynodus.com', 'Quirze', 'Salomó', 'Quirze Salomó', 'admin', 1, 1, TRUE, 1000),
+    (1, 'admin', '93f66ceef0f855fb9735f020ff491a9ab668e7fc21bc8cf048f8070036689d4875e5807b008491986c75d8adb808716491524733206b1529376fbfbe22e443cc.2854b49d149c1e5037c0420024db6c05', 'admin@mynodus.com', 'Admin', 'User', 'Admin User', 'admin', 1, 1, TRUE, 1000)
 ON CONFLICT (id) DO NOTHING;
 
 \echo '✅ Inserted default users'
