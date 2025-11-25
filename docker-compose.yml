@@ -310,9 +310,8 @@ services:
       QDRANT_API_KEY: ${QDRANT_API_KEY:-}
       
       # AI Models (via LiteLLM proxy)
-      # Using gpt-4o-mini forces ADK to use OpenAI SDK which respects OPENAI_API_BASE
-      # LiteLLM then routes this to the actual provider (can be OpenAI, Gemini, etc.)
-      ADK_MODEL: ${ADK_MODEL:-gpt-4o-mini}
+      # Using Gemini model recognized by ADK, but LiteLLM routes it
+      ADK_MODEL: ${ADK_MODEL:-gemini-2.0-flash-exp}
       ADK_PROJECT_ID: ${ADK_PROJECT_ID:-}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}  # Not used - routed via LiteLLM
       
