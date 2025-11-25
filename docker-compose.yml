@@ -79,6 +79,60 @@ services:
       retries: 3
 
   # ============================================================================
+  # Observability: Langfuse (LLM Tracing & Observability)
+  # ============================================================================
+
+  langfuse:
+    image: langfuse/langfuse:2
+    container_name: nodus-adk-langfuse
+    restart: unless-stopped
+    environment:
+      # PostgreSQL connection
+      DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/langfuse_db
+      
+      # NextAuth configuration
+      NEXTAUTH_SECRET: ${LANGFUSE_SECRET_KEY:-langfuse_dev_secret_change_in_production}
+      SALT: ${LANGFUSE_SECRET_KEY:-langfuse_dev_secret_change_in_production}
+      NEXTAUTH_URL: http://localhost:3000
+      
+      # Disable telemetry
+      TELEMETRY_ENABLED: false
+      
+      # Enable experimental features (prompt management, etc.)
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: true
+      
+      # Server configuration
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      
+    ports:
+      - "3000:3000"
+    
+    volumes:
+      - langfuse_data:/app/uploads
+    
+    networks:
+      - nodus-adk-internal
+      - nodus-adk-edge
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/api/public/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1));\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # ============================================================================
   # Nodus OS Services (from cloned repos)
   # ============================================================================
 
@@ -173,6 +227,41 @@ services:
     command: sh -c "npm install --include=dev && npm run dev"
 
   # ============================================================================
+  # AI Gateway (LiteLLM Self-Hosted)
+  # ============================================================================
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: nodus-adk-litellm
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./config/litellm:/app/config
+    command: [ "--config", "/app/config/litellm_config.yaml", "--port", "4000", "--detailed_debug" ]
+    environment:
+      - DATABASE_URL=postgresql://nodus:nodus_dev_password@postgres:5432/nodus
+      - STORE_MODEL_IN_DB=True
+      
+      # Provider API Keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GOOGLE_API_KEY:-}
+      
+      # Master Key (used for API auth and Admin UI login)
+      # Admin UI: username=admin, password=LITELLM_MASTER_KEY
+      - LITELLM_MASTER_KEY=sk-nodus-master-key
+      
+      # Langfuse integration for observability
+      - LANGFUSE_PUBLIC_KEY=pk-lf-a401fb0c-6ee3-4636-afd4-803b9dfe4aaf
+      - LANGFUSE_SECRET_KEY=sk-lf-ccb62e83-9148-49f8-8858-ff3c963bb7a8
+      - LANGFUSE_HOST=http://langfuse:3000
+    networks:
+      - nodus-adk-internal
+    depends_on:
+      - postgres
+      - redis
+      - langfuse
+
+  # ============================================================================
   # ADK Services (from new repos)
   # ============================================================================
 
@@ -212,19 +301,48 @@ services:
       dockerfile: Dockerfile.dev
     container_name: nodus-adk-runtime
     environment:
-      DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
+      # Database & Services
+      DATABASE_URL: postgresql+asyncpg://nodus:nodus_dev_password@postgres:5432/nodus
       REDIS_URL: redis://redis:6379/0
       BACKOFFICE_URL: http://backoffice:5001
       MCP_GATEWAY_URL: http://mcp-gateway:7443
       QDRANT_URL: http://qdrant:6333
       QDRANT_API_KEY: ${QDRANT_API_KEY:-}
-      ADK_MODEL: ${ADK_MODEL:-gemini-2.0-flash-exp}
+      
+      # AI Models (via LiteLLM proxy)
+      # Using gpt-4o-mini forces ADK to use OpenAI SDK which respects OPENAI_API_BASE
+      # LiteLLM then routes this to the actual provider (can be OpenAI, Gemini, etc.)
+      ADK_MODEL: ${ADK_MODEL:-gpt-4o-mini}
       ADK_PROJECT_ID: ${ADK_PROJECT_ID:-}
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}  # Not used - routed via LiteLLM
+      
+      # Server Config
       LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
       PORT: 8080
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5002,http://localhost:5001}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5002,http://localhost:5001,http://localhost:3000}
+      
+      # Langfuse Observability
+      LANGFUSE_ENABLED: ${LANGFUSE_ENABLED:-true}
+      LANGFUSE_HOST: http://langfuse:3000
+      LANGFUSE_PUBLIC_KEY: pk-lf-a401fb0c-6ee3-4636-afd4-803b9dfe4aaf
+      LANGFUSE_SECRET_KEY: sk-lf-ccb62e83-9148-49f8-8858-ff3c963bb7a8
+      
+      # LiteLLM Proxy Configuration (unified AI gateway for ALL models)
+      # ALL LLM calls (OpenAI, Gemini, Claude) go through this proxy
+      OPENAI_API_BASE: http://litellm:4000/v1
+      OPENAI_API_KEY: sk-nodus-master-key
+      LITELLM_PROXY_API_BASE: http://litellm:4000
+      LITELLM_PROXY_API_KEY: sk-nodus-master-key
+      
+      # OpenTelemetry Configuration
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://langfuse:3000/api/public/ingestion}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-nodus-adk-runtime}
+      OTEL_TRACES_SAMPLER: ${OTEL_TRACES_SAMPLER:-parentbased_traceidratio}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1.0}
+      
+      # ADK Telemetry
+      ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS: ${ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS:-true}
+      
     ports:
       - "8080:8080"
     volumes:
@@ -243,6 +361,8 @@ services:
         condition: service_started
       mcp-gateway:
         condition: service_started
+      langfuse:
+        condition: service_healthy
 
 # ============================================================================
 # Networks
@@ -271,4 +391,7 @@ volumes:
     name: nodus-adk-minio-data
   llibreta_node_modules:
     name: nodus-adk-llibreta-node-modules
+  langfuse_data:
+    name: nodus-adk-langfuse-data
+
 

@@ -1,0 +1,11 @@
+# Backups de base de dades
+# Els backups .sql.gz són massa grans per Git
+# Es pugen a Google Drive automàticament
+
+*.sql
+*.sql.gz
+
+# Excepcions: Permetre fitxers de documentació
+!README.md
+!.gitignore
+

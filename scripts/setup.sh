@@ -43,3 +43,4 @@ echo "1. Review and update .env file"
 echo "2. Run: ./dev up"
 echo ""
 
+
