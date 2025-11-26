@@ -265,35 +265,33 @@ services:
   # ADK Services (from new repos)
   # ============================================================================
 
-  adk-web:
+  agent-pool:
     build:
       context: ../nodus-adk-agents
-      dockerfile: Dockerfile.dev
-    container_name: nodus-adk-web
+      dockerfile: Dockerfile.pool
+    container_name: nodus-adk-agent-pool
     environment:
-      DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
-      REDIS_URL: redis://redis:6379/0
-      BACKOFFICE_URL: http://backoffice:5001
-      MCP_GATEWAY_URL: http://mcp-gateway:7443
-      QDRANT_URL: http://qdrant:6333
       LOG_LEVEL: INFO
       PORT: 8000
+      
+      # Langfuse observability for A2A agents
+      LANGFUSE_ENABLED: ${LANGFUSE_ENABLED:-true}
+      LANGFUSE_HOST: http://langfuse:3000
+      LANGFUSE_PUBLIC_KEY: pk-lf-a401fb0c-6ee3-4636-afd4-803b9dfe4aaf
+      LANGFUSE_SECRET_KEY: sk-lf-ccb62e83-9148-49f8-8858-ff3c963bb7a8
+      
+      # OpenTelemetry configuration
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://langfuse:3000/api/public/ingestion}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME_A2A:-nodus-adk-agent-pool}
+      OTEL_TRACES_SAMPLER: ${OTEL_TRACES_SAMPLER:-parentbased_traceidratio}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1.0}
     ports:
       - "8000:8000"
-    volumes:
-      - ../nodus-adk-agents:/app
     networks:
       - nodus-adk-internal
-      - nodus-adk-edge
     depends_on:
-      postgres:
+      langfuse:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-      backoffice:
-        condition: service_started
-      mcp-gateway:
-        condition: service_started
 
   adk-runtime:
     build:
