@@ -158,9 +158,11 @@ services:
       OM_PG_TABLE: openmemory_memories
       OM_PG_SSL: disable
       
-      # Vector Backend (SQLite for simplicity)
-      OM_VECTOR_BACKEND: sqlite
-      OM_VECTOR_TABLE: openmemory_vectors
+      # Vector Backend (Qdrant for multi-user isolation)
+      OM_VECTOR_BACKEND: qdrant
+      OM_QDRANT_URL: http://qdrant:6333
+      OM_QDRANT_COLLECTION: openmemory_vectors
+      OM_QDRANT_USE_NAMESPACES: "true"  # Crucial per multi-tenancy!
       
       # Embeddings via LiteLLM
       OM_EMBEDDINGS: openai
@@ -199,6 +201,29 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    restart: unless-stopped
+
+  openmemory-dashboard:
+    build:
+      context: /Users/quirze/Factory/nodus-os/repos/nodus-memory/dashboard
+      dockerfile: Dockerfile.prod
+    container_name: nodus-adk-openmemory-dashboard
+    ports:
+      - "3004:3000"  # External 3004 -> Internal 3000 (Langfuse usa 3000)
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:8088
+      OPENMEMORY_API_URL: http://openmemory:8080
+      PORT: 3000
+    volumes:
+      - /Users/quirze/Factory/nodus-os/repos/nodus-memory/dashboard:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - nodus-adk-internal
+      - nodus-adk-edge
+    depends_on:
+      - openmemory
     restart: unless-stopped
 
   # ============================================================================
