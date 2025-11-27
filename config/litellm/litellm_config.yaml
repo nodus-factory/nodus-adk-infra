@@ -78,6 +78,15 @@ model_list:
       api_key: os.environ/ANTHROPIC_API_KEY
       timeout: 60
 
+  # ============================================================================
+  # Groq Models (Fast Inference)
+  # ============================================================================
+  - model_name: whisper-1
+    litellm_params:
+      model: groq/whisper-large-v3
+      api_key: os.environ/GROQ_API_KEY
+      timeout: 30
+
 # ============================================================================
 # Router Settings
 # ============================================================================

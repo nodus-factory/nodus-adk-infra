@@ -320,6 +320,27 @@ services:
         condition: service_started
     command: sh -c "npm install --include=dev && npm run dev"
 
+  # B2BRouter MCP Server (local deployment for development)
+  mcp-b2brouter:
+    build:
+      context: ../nodus-mcp-b2brouter
+      dockerfile: Dockerfile
+    container_name: nodus-adk-mcp-b2brouter
+    environment:
+      PORT: 3001
+      B2BROUTER_API_KEY: ${B2BROUTER_API_KEY:-3194b66154a8f6fda9ebaa50c35d385ee354df23}
+      B2BROUTER_ENVIRONMENT: ${B2BROUTER_ENVIRONMENT:-staging}
+      NODE_ENV: development
+    ports:
+      - "3001:3001"
+    volumes:
+      - ../nodus-mcp-b2brouter:/app
+      - /app/node_modules
+    networks:
+      - nodus-adk-internal
+      - nodus-adk-edge
+    command: sh -c "npm install && npm run build && node dist/http-server.js"
+
   # ============================================================================
   # AI Gateway (LiteLLM Self-Hosted)
   # ============================================================================
@@ -339,6 +360,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - GEMINI_API_KEY=${GOOGLE_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
       
       # Master Key (used for API auth and Admin UI login)
       # Admin UI: username=admin, password=LITELLM_MASTER_KEY
