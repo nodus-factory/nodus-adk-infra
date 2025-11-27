@@ -360,6 +360,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - GEMINI_API_KEY=${GOOGLE_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       
       # Master Key (used for API auth and Admin UI login)
@@ -425,7 +426,7 @@ services:
       
       # AI Models (via LiteLLM proxy)
       # Using Gemini model recognized by ADK, but LiteLLM routes it
-      ADK_MODEL: ${ADK_MODEL:-gemini-2.0-flash-exp}
+      ADK_MODEL: ${ADK_MODEL:-gpt-4o}
       ADK_PROJECT_ID: ${ADK_PROJECT_ID:-}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}  # Not used - routed via LiteLLM
       

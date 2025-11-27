@@ -116,7 +116,7 @@ general_settings:
   master_key: sk-nodus-master-key
   
   # Database settings (store model config in PostgreSQL)
-  database_url: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
+  database_url: postgresql://nodus:nodus_dev_password@postgres:5432/litellm_db
   
   # Langfuse integration for observability
   langfuse_public_key: ${LANGFUSE_PUBLIC_KEY}
