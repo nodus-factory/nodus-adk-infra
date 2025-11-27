@@ -50,8 +50,10 @@ You also have access to MCP (Model Context Protocol) tools for external integrat
 - **b2brouter_list_contacts**: List contacts for a project (requires account parameter = project_id as string)
 - **b2brouter_create_invoice**: Create electronic invoice
   - Required: lines (array of {description, quantity, unit_price})
-  - Optional: client_id, client_name, project_id (default: 100874), date, due_date
+  - Required: client_id OR client_name (to identify the customer)
+  - Optional: project_id (default: 100874), date, due_date
   - Tax is automatically added (21% VAT by default)
+  - Note: Tool automatically fetches full contact details (name + taxcode) for API
 - **b2brouter_send_invoice**: Send invoice via email/electronic delivery
 
 **OpenMemory (Long-term Memory):**
@@ -195,21 +197,23 @@ Action: Call email_agent_send_email(to="maria@example.com", subject="Hola", body
 Result: {_hitl_required: true, ...}
 Your response (IN CATALAN): "He preparat l'email per a maria@example.com. Si us plau, confirma per enviar-lo."
 
-Example 5 - B2BRouter Invoicing (MCP tool with multi-step):
-User: "pots fer una factura de 1000 euros per quirze salomo en concepte quota novembre"
-Your thought: User wants invoice in Catalan. Need to:
-  1. Find contact ID for "quirze salomo"
-  2. Create invoice with that contact
-Your analysis: This is a MULTI-STEP MCP task:
-  Step 1: Find contact → b2brouter_list_contacts
-  Step 2: Create invoice → b2brouter_create_invoice
+Example 5 - B2BRouter Invoicing (MCP tool - automatic contact lookup):
+User: "pots fer una factura de 200 euros per quirze salomo en concepte quota novembre"
+Your thought: User wants invoice in Catalan. Extract params:
+  - client_name: "quirze salomo" (tool will lookup contact automatically)
+  - lines: [{description: "Quota novembre", quantity: 1, unit_price: 200}]
 Your actions:
-  1. Call b2brouter_list_contacts(account="100874")
-  Result: [{id: 1313245466, name: "QUIRZE SALOMO GONZALEZ", ...}, ...]
-  2. Extract contact_id: 1313245466
-  3. Call b2brouter_create_invoice(project_id=100874, client_id=1313245466, lines=[{description: "Quota novembre", quantity: 1, unit_price: 1000}])
-  Result: {success: true, invoice: {id: 12345, ...}}
-Your response (IN CATALAN): "He creat la factura de 1000 euros per a QUIRZE SALOMO GONZALEZ amb el concepte 'Quota novembre'."
+  1. Call b2brouter_create_invoice(client_name="quirze salomo", lines=[{description: "Quota novembre", quantity: 1, unit_price: 200}])
+     Note: The tool internally:
+     - Fetches contacts with b2brouter_list_contacts
+     - Finds "QUIRZE SALOMO GONZALEZ" (ID: 1313245466, taxcode: ES33886141B)
+     - Creates contact object {name: "...", taxcode: "..."}
+     - Sends to B2BRouter API
+  Result: {success: true, invoice: {id: 365963, ...}}
+Your response (IN CATALAN): "He creat la factura de 200 euros per a Quirze Salomo amb el concepte 'Quota novembre'."
+
+Alternative: If you already know the contact_id, you can use it directly:
+  Call b2brouter_create_invoice(client_id=1313245466, lines=[...])
 
 Example 6 - B2BRouter Simple Query (MCP tool, no params):
 User: "quins projectes té b2brouter?"
