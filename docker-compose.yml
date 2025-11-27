@@ -294,7 +294,7 @@ services:
       backoffice:
         condition: service_started
     user: "0:0"
-    command: sh -c "chown -R 1000:1000 /app/node_modules 2>/dev/null || true && chown -R 1000:1000 /app 2>/dev/null || true && su node -c 'cd /app && npm install --include=dev && npm run dev:simple'"
+    command: sh -c "chown -R 1000:1000 /app/node_modules 2>/dev/null || true && chown -R 1000:1000 /app 2>/dev/null || true && su node -c 'cd /app && npm install --include=dev && npx concurrently -n backend,frontend -c bgBlue.bold,bgMagenta.bold \"npm run dev:simple\" \"vite\"'"
 
   mcp-gateway:
     build:
@@ -394,7 +394,7 @@ services:
     container_name: nodus-adk-runtime
     environment:
       # Database & Services
-      DATABASE_URL: postgresql+asyncpg://nodus:nodus_dev_password@postgres:5432/nodus
+      DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
       REDIS_URL: redis://redis:6379/0
       BACKOFFICE_URL: http://backoffice:5001
       MCP_GATEWAY_URL: http://mcp-gateway:7443
