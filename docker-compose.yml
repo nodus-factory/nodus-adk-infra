@@ -137,7 +137,10 @@ services:
   # ============================================================================
 
   openmemory:
-    image: ghcr.io/nodus-factory/openmemory:stable
+    # image: ghcr.io/nodus-factory/openmemory:stable  # Commented for local build
+    build:
+      context: /Users/quirze/Factory/nodus-os/repos/nodus-memory/backend
+      dockerfile: Dockerfile
     container_name: nodus-adk-openmemory
     ports:
       - "8088:8080"
@@ -185,6 +188,10 @@ services:
       OM_LG_NAMESPACE: nodus-adk
       OM_LG_MAX_CONTEXT: 50
       OM_LG_REFLECTIVE: "true"
+      
+      # LLM Classification (NEW - feature/llm-multilingual-classification)
+      OM_USE_LLM_CLASSIFICATION: "true"           # Enable LLM-based classification
+      OM_LLM_CONFIDENCE_THRESHOLD: "0.5"          # Threshold for LLM fallback (0.0-1.0)
       
     volumes:
       - ./data/openmemory:/data
@@ -247,6 +254,10 @@ services:
       JWT_JWKS_URL: http://localhost:5001/.well-known/jwks.json
       JWT_ISSUER: backoffice
       JWT_AUDIENCE: backoffice
+      # Google Credentials for Token Generation
+      GOOGLE_WORKSPACE_SA_CLIENT_EMAIL: ${GOOGLE_WORKSPACE_SA_CLIENT_EMAIL}
+      GOOGLE_WORKSPACE_SA_PRIVATE_KEY: ${GOOGLE_WORKSPACE_SA_PRIVATE_KEY}
+      BACKOFFICE_SERVICE_TOKEN: ${BACKOFFICE_SERVICE_TOKEN}
     ports:
       - "5001:5001"
     volumes:
@@ -306,6 +317,7 @@ services:
       REDIS_URL: redis://redis:6379/1
       BACKOFFICE_URL: http://backoffice:5001
       LOG_LEVEL: debug
+      BACKOFFICE_SERVICE_TOKEN: ${BACKOFFICE_SERVICE_TOKEN}
     ports:
       - "7443:7443"
     volumes:
