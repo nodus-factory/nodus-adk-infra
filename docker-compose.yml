@@ -357,10 +357,7 @@ services:
   # AI Gateway (LiteLLM Self-Hosted)
   # ============================================================================
   litellm:
-    build:
-      context: ./litellm
-      dockerfile: Dockerfile
-    image: nodus-adk-litellm:latest
+    image: ghcr.io/berriai/litellm:main-v1.52.11
     container_name: nodus-adk-litellm
     ports:
       - "4000:4000"
