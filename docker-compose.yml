@@ -357,7 +357,7 @@ services:
   # AI Gateway (LiteLLM Self-Hosted)
   # ============================================================================
   litellm:
-    image: ghcr.io/berriai/litellm:main-v1.52.11
+    image: ghcr.io/berriai/litellm:main-v1.52.11  # Debian-based, supports libsndfile. Note: No modern dashboard, only Swagger UI
     container_name: nodus-adk-litellm
     ports:
       - "4000:4000"
