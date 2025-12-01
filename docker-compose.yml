@@ -133,105 +133,27 @@ services:
         max-file: "3"
 
   # ============================================================================
-  # OpenMemory (Memory Layer - MCP Server via nodus-memory fork)
+  # OpenMemory (Memory Layer - DISABLED, using direct Qdrant instead)
+  # Reason: JWT expiration in batch, no vector generation, complex setup
   # ============================================================================
 
-  openmemory:
-    # image: ghcr.io/nodus-factory/openmemory:stable  # Commented for local build
-    build:
-      context: /Users/quirze/Factory/nodus-os/repos/nodus-memory/backend
-      dockerfile: Dockerfile
-    container_name: nodus-adk-openmemory
-    ports:
-      - "8088:8080"
-    environment:
-      # Core Configuration
-      OM_PORT: 8080
-      OM_MODE: standard
-      OM_TIER: hybrid
-      
-      # Database Backend (PostgreSQL)
-      OM_METADATA_BACKEND: postgresql
-      OM_PG_HOST: postgres
-      OM_PG_PORT: 5432
-      OM_PG_DB: openmemory
-      OM_PG_USER: nodus
-      OM_PG_PASSWORD: nodus_dev_password
-      OM_PG_SCHEMA: public
-      OM_PG_TABLE: openmemory_memories
-      OM_PG_SSL: disable
-      
-      # Vector Backend (Qdrant for multi-user isolation)
-      OM_VECTOR_BACKEND: qdrant
-      OM_QDRANT_URL: http://qdrant:6333
-      OM_QDRANT_COLLECTION: openmemory_vectors
-      OM_QDRANT_USE_NAMESPACES: "true"  # Crucial per multi-tenancy!
-      
-      # Embeddings via LiteLLM
-      OM_EMBEDDINGS: openai
-      OM_OPENAI_API_KEY: sk-nodus-master-key
-      OM_OPENAI_BASE_URL: http://litellm:4000/v1
-      OM_OPENAI_MODEL: text-embedding-3-small
-      
-      # Memory Features
-      OM_DECAY_REINFORCE_ON_QUERY: "true"
-      OM_DECAY_INTERVAL_MINUTES: 1440  # Daily decay
-      OM_AUTO_REFLECT: "true"
-      OM_REFLECT_INTERVAL: 10
-      OM_USER_SUMMARY_INTERVAL: 30
-      
-      # HSG Configuration
-      OM_MIN_SCORE: 0.3
-      OM_MAX_PAYLOAD_SIZE: 1000000
-      
-      # LangGraph Integration
-      OM_LG_NAMESPACE: nodus-adk
-      OM_LG_MAX_CONTEXT: 50
-      OM_LG_REFLECTIVE: "true"
-      
-      # LLM Classification (NEW - feature/llm-multilingual-classification)
-      OM_USE_LLM_CLASSIFICATION: "true"           # Enable LLM-based classification
-      OM_LLM_CONFIDENCE_THRESHOLD: "0.5"          # Threshold for LLM fallback (0.0-1.0)
-      
-    volumes:
-      - ./data/openmemory:/data
-    networks:
-      - nodus-adk-internal
-    depends_on:
-      postgres:
-        condition: service_healthy
-      litellm:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    restart: unless-stopped
+  # DISABLED - OpenMemory replaced by direct Qdrant access
+  # Reasons: JWT expiration in batch, no vector generation, overly complex
+  # New approach: Direct Qdrant with separate collections for memory vs knowledge
+  
+  # openmemory:
+  #   build:
+  #     context: /Users/quirze/Factory/nodus-os/repos/nodus-memory/backend
+  #     dockerfile: Dockerfile
+  #   container_name: nodus-adk-openmemory
+  #   ...
 
-  openmemory-dashboard:
-    build:
-      context: /Users/quirze/Factory/nodus-os/repos/nodus-memory/dashboard
-      dockerfile: Dockerfile.prod
-    container_name: nodus-adk-openmemory-dashboard
-    ports:
-      - "3004:3000"  # External 3004 -> Internal 3000 (Langfuse usa 3000)
-    environment:
-      NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:8088
-      OPENMEMORY_API_URL: http://openmemory:8080
-      PORT: 3000
-    volumes:
-      - /Users/quirze/Factory/nodus-os/repos/nodus-memory/dashboard:/app
-      - /app/node_modules
-      - /app/.next
-    networks:
-      - nodus-adk-internal
-      - nodus-adk-edge
-    depends_on:
-      - openmemory
-    restart: unless-stopped
+  # openmemory-dashboard:
+  #   build:
+  #     context: /Users/quirze/Factory/nodus-os/repos/nodus-memory/dashboard
+  #     dockerfile: Dockerfile.prod
+  #   container_name: nodus-adk-openmemory-dashboard
+  #   ...
 
   # ============================================================================
   # Nodus OS Services (from cloned repos)
