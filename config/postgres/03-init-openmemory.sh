@@ -1,31 +1,36 @@
--- ============================================================================
--- OpenMemory Database
--- ============================================================================
+#!/usr/bin/env bash
+set -euo pipefail
 
--- Create database for OpenMemory (nodus-memory fork)
+echo '============================================================================'
+echo 'OpenMemory Database'
+echo '============================================================================'
+
+DB_USER="${POSTGRES_USER:-nodus}"
+DB_NAME="${POSTGRES_DB:-nodus_db}"
+
+# Create database for OpenMemory (nodus-memory fork)
+psql -U "$DB_USER" -d postgres <<EOF
 CREATE DATABASE openmemory;
+GRANT ALL PRIVILEGES ON DATABASE openmemory TO $DB_USER;
+EOF
 
--- Grant privileges
-GRANT ALL PRIVILEGES ON DATABASE openmemory TO nodus;
-
--- Connect to openmemory database and prepare schema
-\c openmemory;
-
+# Connect to openmemory database and prepare schema
+psql -U "$DB_USER" -d openmemory <<EOF
 -- Grant schema permissions (OpenMemory creates tables automatically)
-GRANT ALL ON SCHEMA public TO nodus;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO nodus;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO nodus;
+GRANT ALL ON SCHEMA public TO $DB_USER;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $DB_USER;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO $DB_USER;
 
 -- Set default privileges for future tables
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO nodus;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO nodus;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO $DB_USER;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO $DB_USER;
+EOF
 
+# Switch back to main nodus database and create ADK conversation memory table
+psql -U "$DB_USER" -d "$DB_NAME" <<EOF
 -- ============================================================================
 -- ADK Conversation Memory Table (for DatabaseMemoryService)
 -- ============================================================================
-
--- Switch back to main nodus database
-\c nodus;
 
 -- Create table for short-term conversation memory
 CREATE TABLE IF NOT EXISTS adk_conversation_memory (
@@ -47,9 +52,12 @@ CREATE INDEX IF NOT EXISTS idx_conv_tenant ON adk_conversation_memory(tenant_id)
 CREATE INDEX IF NOT EXISTS idx_conv_created_at ON adk_conversation_memory(created_at DESC);
 
 -- Grant permissions
-GRANT ALL PRIVILEGES ON TABLE adk_conversation_memory TO nodus;
-GRANT USAGE, SELECT ON SEQUENCE adk_conversation_memory_id_seq TO nodus;
+GRANT ALL PRIVILEGES ON TABLE adk_conversation_memory TO $DB_USER;
+GRANT USAGE, SELECT ON SEQUENCE adk_conversation_memory_id_seq TO $DB_USER;
 
 -- Add comment for documentation
 COMMENT ON TABLE adk_conversation_memory IS 'Short-term conversation memory for ADK PreloadMemoryTool. Stores last ~100 messages per user.';
+EOF
+
+echo "✅ OpenMemory database initialized successfully"
 

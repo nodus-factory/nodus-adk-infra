@@ -53,15 +53,17 @@ info "✓ Docker Compose found: $(docker compose version)"
 WORKSPACE_NAME="nodus-os-adk"
 GITHUB_ORG="nodus-factory"
 
-# Repository list
-declare -A REPOS
-REPOS[adk-python]="fork"
-REPOS[nodus-adk-runtime]="new"
-REPOS[nodus-adk-agents]="new"
-REPOS[nodus-adk-infra]="new"
-REPOS[nodus-backoffice]="existing"
-REPOS[nodus-llibreta]="existing"
-REPOS[nodus-mcp-gateway]="existing"
+# Repository list (compatible with Bash 3.2)
+# Format: repo_name:repo_type
+REPOS=(
+    "adk-python:fork"
+    "nodus-adk-runtime:new"
+    "nodus-adk-agents:new"
+    "nodus-adk-infra:new"
+    "nodus-backoffice:existing"
+    "nodus-llibreta:existing"
+    "nodus-mcp-gateway:existing"
+)
 
 # Check if workspace already exists
 if [ -d "$WORKSPACE_NAME" ]; then
@@ -99,8 +101,9 @@ fi
 # Clone or update repositories
 title "Cloning Repositories"
 
-for repo in "${!REPOS[@]}"; do
-    repo_type=${REPOS[$repo]}
+for repo_entry in "${REPOS[@]}"; do
+    repo=$(echo "$repo_entry" | cut -d: -f1)
+    repo_type=$(echo "$repo_entry" | cut -d: -f2)
     
     if [ -d "$repo" ] && [ "$UPDATE_MODE" = true ]; then
         info "Updating $repo..."

@@ -1,0 +1,941 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict K9uVuXBrzwseC8DkmMyaO2hC2dASQMXRvsh4b29FXPsIVfXWvsbkbcHSLnpxJfz
+
+-- Dumped from database version 16.10
+-- Dumped by pg_dump version 16.10
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS users_role_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.settings DROP CONSTRAINT IF EXISTS settings_updated_by_users_id_fk;
+ALTER TABLE IF EXISTS ONLY public.menus DROP CONSTRAINT IF EXISTS menus_parent_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.menu_roles DROP CONSTRAINT IF EXISTS menu_roles_role_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.menu_roles DROP CONSTRAINT IF EXISTS menu_roles_menu_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.contacts DROP CONSTRAINT IF EXISTS contacts_added_by_users_id_fk;
+DROP INDEX IF EXISTS public."IDX_session_expire";
+ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS users_username_unique;
+ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS users_pkey;
+ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS unique_username;
+ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS unique_email;
+ALTER TABLE IF EXISTS ONLY public.settings DROP CONSTRAINT IF EXISTS settings_pkey;
+ALTER TABLE IF EXISTS ONLY public.session DROP CONSTRAINT IF EXISTS session_pkey;
+ALTER TABLE IF EXISTS ONLY public.roles DROP CONSTRAINT IF EXISTS roles_pkey;
+ALTER TABLE IF EXISTS ONLY public.roles DROP CONSTRAINT IF EXISTS roles_name_key;
+ALTER TABLE IF EXISTS ONLY public.queries DROP CONSTRAINT IF EXISTS queries_pkey;
+ALTER TABLE IF EXISTS ONLY public.menus DROP CONSTRAINT IF EXISTS menus_pkey;
+ALTER TABLE IF EXISTS ONLY public.menus DROP CONSTRAINT IF EXISTS menus_name_key;
+ALTER TABLE IF EXISTS ONLY public.menu_roles DROP CONSTRAINT IF EXISTS menu_roles_pkey;
+ALTER TABLE IF EXISTS ONLY public.menu_roles DROP CONSTRAINT IF EXISTS menu_roles_menu_id_role_id_key;
+ALTER TABLE IF EXISTS ONLY public.knowledge_processed_files DROP CONSTRAINT IF EXISTS knowledge_processed_files_pkey;
+ALTER TABLE IF EXISTS ONLY public.knowledge_processed_files DROP CONSTRAINT IF EXISTS knowledge_processed_files_collection_name_file_hash_key;
+ALTER TABLE IF EXISTS ONLY public.knowledge_collections_status DROP CONSTRAINT IF EXISTS knowledge_collections_status_pkey;
+ALTER TABLE IF EXISTS ONLY public.knowledge_collections_status DROP CONSTRAINT IF EXISTS knowledge_collections_status_collection_name_key;
+ALTER TABLE IF EXISTS ONLY public.contacts DROP CONSTRAINT IF EXISTS contacts_value_unique;
+ALTER TABLE IF EXISTS ONLY public.contacts DROP CONSTRAINT IF EXISTS contacts_pkey;
+ALTER TABLE IF EXISTS public.users ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.settings ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.roles ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.queries ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.menus ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.menu_roles ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.knowledge_processed_files ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.knowledge_collections_status ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.contacts ALTER COLUMN id DROP DEFAULT;
+DROP SEQUENCE IF EXISTS public.users_id_seq;
+DROP TABLE IF EXISTS public.users;
+DROP SEQUENCE IF EXISTS public.settings_id_seq;
+DROP TABLE IF EXISTS public.settings;
+DROP TABLE IF EXISTS public.session;
+DROP SEQUENCE IF EXISTS public.roles_id_seq;
+DROP TABLE IF EXISTS public.roles;
+DROP SEQUENCE IF EXISTS public.queries_id_seq;
+DROP TABLE IF EXISTS public.queries;
+DROP SEQUENCE IF EXISTS public.menus_id_seq;
+DROP TABLE IF EXISTS public.menus;
+DROP SEQUENCE IF EXISTS public.menu_roles_id_seq;
+DROP TABLE IF EXISTS public.menu_roles;
+DROP SEQUENCE IF EXISTS public.knowledge_processed_files_id_seq;
+DROP TABLE IF EXISTS public.knowledge_processed_files;
+DROP SEQUENCE IF EXISTS public.knowledge_collections_status_id_seq;
+DROP TABLE IF EXISTS public.knowledge_collections_status;
+DROP SEQUENCE IF EXISTS public.contacts_id_seq;
+DROP TABLE IF EXISTS public.contacts;
+-- *not* dropping schema, since initdb creates it
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: #db_user#
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+ALTER SCHEMA public OWNER TO #db_user#;
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: #db_user#
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: contacts; Type: TABLE; Schema: public; Owner: #db_user#
+--
+
+CREATE TABLE public.contacts (
+    id integer NOT NULL,
+    type text NOT NULL,
+    value text NOT NULL,
+    name text,
+    list_type text NOT NULL,
+    reason text,
+    added_at timestamp without time zone DEFAULT now(),
+    added_by integer
+);
+
+
+ALTER TABLE public.contacts OWNER TO #db_user#;
+
+--
+-- Name: contacts_id_seq; Type: SEQUENCE; Schema: public; Owner: #db_user#
+--
+
+CREATE SEQUENCE public.contacts_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.contacts_id_seq OWNER TO #db_user#;
+
+--
+-- Name: contacts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: #db_user#
+--
+
+ALTER SEQUENCE public.contacts_id_seq OWNED BY public.contacts.id;
+
+
+--
+-- Name: knowledge_collections_status; Type: TABLE; Schema: public; Owner: #db_user#
+--
+
+CREATE TABLE public.knowledge_collections_status (
+    id integer NOT NULL,
+    collection_name character varying(255) NOT NULL,
+    last_vectorization timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.knowledge_collections_status OWNER TO #db_user#;
+
+--
+-- Name: knowledge_collections_status_id_seq; Type: SEQUENCE; Schema: public; Owner: #db_user#
+--
+
+CREATE SEQUENCE public.knowledge_collections_status_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.knowledge_collections_status_id_seq OWNER TO #db_user#;
+
+--
+-- Name: knowledge_collections_status_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: #db_user#
+--
+
+ALTER SEQUENCE public.knowledge_collections_status_id_seq OWNED BY public.knowledge_collections_status.id;
+
+
+--
+-- Name: knowledge_processed_files; Type: TABLE; Schema: public; Owner: #db_user#
+--
+
+CREATE TABLE public.knowledge_processed_files (
+    id integer NOT NULL,
+    collection_name text NOT NULL,
+    file_name text NOT NULL,
+    file_hash text NOT NULL,
+    processed_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.knowledge_processed_files OWNER TO #db_user#;
+
+--
+-- Name: knowledge_processed_files_id_seq; Type: SEQUENCE; Schema: public; Owner: #db_user#
+--
+
+CREATE SEQUENCE public.knowledge_processed_files_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.knowledge_processed_files_id_seq OWNER TO #db_user#;
+
+--
+-- Name: knowledge_processed_files_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: #db_user#
+--
+
+ALTER SEQUENCE public.knowledge_processed_files_id_seq OWNED BY public.knowledge_processed_files.id;
+
+
+--
+-- Name: menu_roles; Type: TABLE; Schema: public; Owner: #db_user#
+--
+
+CREATE TABLE public.menu_roles (
+    id integer NOT NULL,
+    menu_id integer NOT NULL,
+    role_id integer NOT NULL,
+    created_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.menu_roles OWNER TO #db_user#;
+
+--
+-- Name: menu_roles_id_seq; Type: SEQUENCE; Schema: public; Owner: #db_user#
+--
+
+CREATE SEQUENCE public.menu_roles_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.menu_roles_id_seq OWNER TO #db_user#;
+
+--
+-- Name: menu_roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: #db_user#
+--
+
+ALTER SEQUENCE public.menu_roles_id_seq OWNED BY public.menu_roles.id;
+
+
+--
+-- Name: menus; Type: TABLE; Schema: public; Owner: #db_user#
+--
+
+CREATE TABLE public.menus (
+    id integer NOT NULL,
+    name text NOT NULL,
+    path text NOT NULL,
+    icon text,
+    display_name text NOT NULL,
+    description text,
+    "order" integer DEFAULT 0,
+    parent_id integer,
+    is_active boolean DEFAULT true,
+    created_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.menus OWNER TO #db_user#;
+
+--
+-- Name: menus_id_seq; Type: SEQUENCE; Schema: public; Owner: #db_user#
+--
+
+CREATE SEQUENCE public.menus_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.menus_id_seq OWNER TO #db_user#;
+
+--
+-- Name: menus_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: #db_user#
+--
+
+ALTER SEQUENCE public.menus_id_seq OWNED BY public.menus.id;
+
+
+--
+-- Name: queries; Type: TABLE; Schema: public; Owner: #db_user#
+--
+
+CREATE TABLE public.queries (
+    id integer NOT NULL,
+    channel text NOT NULL,
+    sender text NOT NULL,
+    query text NOT NULL,
+    response text,
+    status text NOT NULL,
+    error_message text,
+    received_at timestamp without time zone DEFAULT now(),
+    responded_at timestamp without time zone,
+    processing_time integer,
+    vector_ids text[],
+    ai_model text,
+    conversation_id text,
+    previous_message_id integer,
+    openai_thread_id text
+);
+
+
+ALTER TABLE public.queries OWNER TO #db_user#;
+
+--
+-- Name: queries_id_seq; Type: SEQUENCE; Schema: public; Owner: #db_user#
+--
+
+CREATE SEQUENCE public.queries_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.queries_id_seq OWNER TO #db_user#;
+
+--
+-- Name: queries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: #db_user#
+--
+
+ALTER SEQUENCE public.queries_id_seq OWNED BY public.queries.id;
+
+
+--
+-- Name: roles; Type: TABLE; Schema: public; Owner: #db_user#
+--
+
+CREATE TABLE public.roles (
+    id integer NOT NULL,
+    name text NOT NULL,
+    description text,
+    created_at timestamp without time zone DEFAULT now(),
+    canwritedb boolean DEFAULT false,
+    can_select_collection boolean DEFAULT false
+);
+
+
+ALTER TABLE public.roles OWNER TO #db_user#;
+
+--
+-- Name: roles_id_seq; Type: SEQUENCE; Schema: public; Owner: #db_user#
+--
+
+CREATE SEQUENCE public.roles_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.roles_id_seq OWNER TO #db_user#;
+
+--
+-- Name: roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: #db_user#
+--
+
+ALTER SEQUENCE public.roles_id_seq OWNED BY public.roles.id;
+
+
+--
+-- Name: session; Type: TABLE; Schema: public; Owner: #db_user#
+--
+
+CREATE TABLE public.session (
+    sid character varying NOT NULL,
+    sess json NOT NULL,
+    expire timestamp(6) without time zone NOT NULL
+);
+
+
+ALTER TABLE public.session OWNER TO #db_user#;
+
+--
+-- Name: settings; Type: TABLE; Schema: public; Owner: #db_user#
+--
+
+CREATE TABLE public.settings (
+    id integer NOT NULL,
+    category text NOT NULL,
+    key text NOT NULL,
+    value text,
+    last_updated timestamp without time zone DEFAULT now(),
+    updated_by integer
+);
+
+
+ALTER TABLE public.settings OWNER TO #db_user#;
+
+--
+-- Name: settings_id_seq; Type: SEQUENCE; Schema: public; Owner: #db_user#
+--
+
+CREATE SEQUENCE public.settings_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.settings_id_seq OWNER TO #db_user#;
+
+--
+-- Name: settings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: #db_user#
+--
+
+ALTER SEQUENCE public.settings_id_seq OWNED BY public.settings.id;
+
+
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: #db_user#
+--
+
+CREATE TABLE public.users (
+    id integer NOT NULL,
+    username text NOT NULL,
+    password text NOT NULL,
+    role text DEFAULT 'editor'::text NOT NULL,
+    name text,
+    created_at timestamp without time zone DEFAULT now(),
+    email text NOT NULL,
+    first_name text NOT NULL,
+    last_name text,
+    organization text,
+    last_login timestamp without time zone,
+    reset_token text,
+    reset_token_expiry timestamp without time zone,
+    role_id integer DEFAULT 2
+);
+
+
+ALTER TABLE public.users OWNER TO #db_user#;
+
+--
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: #db_user#
+--
+
+CREATE SEQUENCE public.users_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.users_id_seq OWNER TO #db_user#;
+
+--
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: #db_user#
+--
+
+ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+
+
+--
+-- Name: contacts id; Type: DEFAULT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.contacts ALTER COLUMN id SET DEFAULT nextval('public.contacts_id_seq'::regclass);
+
+
+--
+-- Name: knowledge_collections_status id; Type: DEFAULT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.knowledge_collections_status ALTER COLUMN id SET DEFAULT nextval('public.knowledge_collections_status_id_seq'::regclass);
+
+
+--
+-- Name: knowledge_processed_files id; Type: DEFAULT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.knowledge_processed_files ALTER COLUMN id SET DEFAULT nextval('public.knowledge_processed_files_id_seq'::regclass);
+
+
+--
+-- Name: menu_roles id; Type: DEFAULT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.menu_roles ALTER COLUMN id SET DEFAULT nextval('public.menu_roles_id_seq'::regclass);
+
+
+--
+-- Name: menus id; Type: DEFAULT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.menus ALTER COLUMN id SET DEFAULT nextval('public.menus_id_seq'::regclass);
+
+
+--
+-- Name: queries id; Type: DEFAULT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.queries ALTER COLUMN id SET DEFAULT nextval('public.queries_id_seq'::regclass);
+
+
+--
+-- Name: roles id; Type: DEFAULT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_id_seq'::regclass);
+
+
+--
+-- Name: settings id; Type: DEFAULT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.settings ALTER COLUMN id SET DEFAULT nextval('public.settings_id_seq'::regclass);
+
+
+--
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Data for Name: contacts; Type: TABLE DATA; Schema: public; Owner: #db_user#
+--
+
+
+
+--
+-- Data for Name: knowledge_collections_status; Type: TABLE DATA; Schema: public; Owner: #db_user#
+--
+
+INSERT INTO public.knowledge_collections_status VALUES (1, 'knowledge', '2025-09-22 09:45:26.03');
+
+
+--
+-- Data for Name: knowledge_processed_files; Type: TABLE DATA; Schema: public; Owner: #db_user#
+--
+
+
+
+--
+-- Data for Name: menu_roles; Type: TABLE DATA; Schema: public; Owner: #db_user#
+--
+
+INSERT INTO public.menu_roles VALUES (1, 1, 1, '2025-04-30 15:20:37.146088');
+INSERT INTO public.menu_roles VALUES (2, 2, 1, '2025-04-30 15:20:37.146088');
+INSERT INTO public.menu_roles VALUES (3, 3, 1, '2025-04-30 15:20:37.146088');
+INSERT INTO public.menu_roles VALUES (4, 4, 1, '2025-04-30 15:20:37.146088');
+INSERT INTO public.menu_roles VALUES (5, 5, 1, '2025-04-30 15:20:37.146088');
+INSERT INTO public.menu_roles VALUES (6, 6, 1, '2025-04-30 15:20:37.146088');
+INSERT INTO public.menu_roles VALUES (7, 7, 1, '2025-04-30 15:20:37.146088');
+INSERT INTO public.menu_roles VALUES (9, 9, 1, '2025-04-30 15:20:37.146088');
+INSERT INTO public.menu_roles VALUES (11, 11, 1, '2025-04-30 15:20:37.146088');
+INSERT INTO public.menu_roles VALUES (12, 1, 2, '2025-04-30 15:20:37.178237');
+INSERT INTO public.menu_roles VALUES (13, 2, 2, '2025-04-30 15:20:37.178237');
+INSERT INTO public.menu_roles VALUES (14, 3, 2, '2025-04-30 15:20:37.178237');
+INSERT INTO public.menu_roles VALUES (17, 5, 2, '2025-05-01 08:10:14.211215');
+INSERT INTO public.menu_roles VALUES (22, 12, 1, '2025-05-01 09:50:57.504805');
+INSERT INTO public.menu_roles VALUES (24, 14, 1, '2025-05-01 13:13:07.295443');
+INSERT INTO public.menu_roles VALUES (27, 15, 1, '2025-05-01 15:53:37.465525');
+INSERT INTO public.menu_roles VALUES (29, 16, 1, '2025-05-04 11:49:39.378102');
+INSERT INTO public.menu_roles VALUES (37, 14, 2, '2025-05-22 07:06:57.514959');
+INSERT INTO public.menu_roles VALUES (38, 7, 2, '2025-05-22 07:55:13.50957');
+INSERT INTO public.menu_roles VALUES (39, 2, 5, '2025-06-26 08:37:12.05653');
+
+
+--
+-- Data for Name: menus; Type: TABLE DATA; Schema: public; Owner: #db_user#
+--
+
+INSERT INTO public.menus VALUES (1, 'dashboard', '/', 'LayoutDashboard', 'Dashboard', 'Main dashboard page', 1, NULL, true, '2025-04-30 15:20:37.04787');
+INSERT INTO public.menus VALUES (2, 'chat', '/chat', 'MessageSquare', 'Chat', 'Direct chat with AI assistant', 2, NULL, true, '2025-04-30 15:20:37.04787');
+INSERT INTO public.menus VALUES (3, 'queries', '/queries', 'History', 'Query History', 'View user query history', 3, NULL, true, '2025-04-30 15:20:37.04787');
+INSERT INTO public.menus VALUES (4, 'knowledge', '/knowledge', 'Folder', 'Knowledge Base', 'Manage knowledge base documents', 4, NULL, true, '2025-04-30 15:20:37.04787');
+INSERT INTO public.menus VALUES (5, 'whitelist', '/whitelist', 'Shield', 'Contact Management', 'Manage whitelisted and blacklisted contacts', 5, NULL, true, '2025-04-30 15:20:37.04787');
+INSERT INTO public.menus VALUES (6, 'users', '/users', 'Users', 'Users', 'Manage users and roles', 6, NULL, true, '2025-04-30 15:20:37.04787');
+INSERT INTO public.menus VALUES (7, 'settings', '/settings', 'Settings', 'Settings', 'Application settings', 7, NULL, true, '2025-04-30 15:20:37.04787');
+INSERT INTO public.menus VALUES (12, 'roles', '/users/roles', 'ShieldCheck', 'Roles', 'Manage user roles and permissions', 10, 6, true, '2025-05-01 09:50:57.470239');
+INSERT INTO public.menus VALUES (14, 'branding-settings', '/settings/branding', 'PaintBucket', 'Branding Settings', 'Configure branding and appearance', 1, 7, true, '2025-05-01 13:12:54.353504');
+INSERT INTO public.menus VALUES (16, 'language-settings', '/settings/language', 'Globe', 'Language Settings', 'Configure application languages', 2, 7, true, '2025-05-04 11:49:16.143915');
+INSERT INTO public.menus VALUES (11, 'menu-permissions', '/settings/menu-permissions', 'Lock', 'Menu Permissions', 'Configure role-based access control for menus', 3, 7, true, '2025-04-30 15:20:37.079693');
+INSERT INTO public.menus VALUES (15, 'prompt-settings', '/settings/prompt', 'MessageSquare', 'System Prompt', 'Configure the system prompt for AI responses', 4, 7, true, '2025-05-01 15:53:16.530977');
+INSERT INTO public.menus VALUES (9, 'email-settings', '/settings/email', 'Mail', 'Email Settings', 'Configure email integration', 5, 7, true, '2025-04-30 15:20:37.079693');
+
+
+--
+-- Data for Name: queries; Type: TABLE DATA; Schema: public; Owner: #db_user#
+--
+
+
+
+--
+-- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: #db_user#
+--
+
+INSERT INTO public.roles VALUES (1, 'admin', 'Administrador del sistema amb accés complet', '2025-04-29 16:04:01.518611', true, true);
+INSERT INTO public.roles VALUES (2, 'editor', 'Editor amb permisos limitats', '2025-04-29 16:04:01.518611', true, true);
+INSERT INTO public.roles VALUES (5, 'demo', 'Només pot accedir al xat. Demostracions amb potencials clients.', '2025-06-26 08:02:18.292', false, false);
+
+
+--
+-- Data for Name: session; Type: TABLE DATA; Schema: public; Owner: #db_user#
+--
+
+INSERT INTO public.session VALUES ('cySy0qt8IomjlUyftVtEmkEGm4nWXVuV', '{"cookie":{"originalMaxAge":86400000,"expires":"2025-04-12T17:19:16.093Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"passport":{"user":5}}', '2025-04-12 17:19:17');
+INSERT INTO public.session VALUES ('si2ATwyHOuA8YiDD6RlLT5koQXLAJqjs', '{"cookie":{"originalMaxAge":86400000,"expires":"2025-04-12T17:20:16.481Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"passport":{"user":5}}', '2025-04-12 17:20:17');
+INSERT INTO public.session VALUES ('uVvzF1AmkJakiigxCwVGeo6ITL13rWtm', '{"cookie":{"originalMaxAge":86400000,"expires":"2025-04-11T14:58:32.426Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"passport":{"user":2}}', '2025-04-11 18:08:47');
+
+
+--
+-- Data for Name: settings; Type: TABLE DATA; Schema: public; Owner: #db_user#
+--
+
+INSERT INTO public.settings VALUES (50, 'security', 'default_whatsapp_message', 'Thank you for your message. Your number is not on our whitelist. Please contact the administrator to request access.', '2025-06-09 15:53:55.242', 1);
+INSERT INTO public.settings VALUES (51, 'security', 'default_email_message', 'Thank you for your email. Your address is not on our whitelist. Please contact the administrator to request access.', '2025-06-09 15:53:55.252', 1);
+INSERT INTO public.settings VALUES (52, 'security', 'useWhitelistForWhatsapp', 'true', '2025-06-09 15:53:55.256', 1);
+INSERT INTO public.settings VALUES (53, 'security', 'useWhitelistForEmail', 'true', '2025-06-09 15:53:55.262', 1);
+INSERT INTO public.settings VALUES (37, 'email', 'imap_auto_polling', 'true', '2025-04-22 15:40:52.026', 1);
+INSERT INTO public.settings VALUES (54, 'language', 'default_language', 'ca', '2025-06-09 15:31:14.66', 1);
+INSERT INTO public.settings VALUES (55, 'language', 'available_languages', '["en","ca","es","fr"]', '2025-06-09 15:31:14.668', 1);
+INSERT INTO public.settings VALUES (6, 'update', 'last_update', '2025-06-11T18:13:25.097Z', '2025-06-11 18:13:25.098', 1);
+INSERT INTO public.settings VALUES (32, 'email', 'from_name', 'Nodus OS', '2025-06-12 08:10:43.082', 1);
+INSERT INTO public.settings VALUES (46, 'email', 'check_interval', '300', '2025-06-12 08:10:43.093', 1);
+INSERT INTO public.settings VALUES (49, 'prompt', 'system_prompt', 'Ets en Joan, una IA que treballa del departament de Marketing de Nodus Factory, que ha desenvolupat la gamma de productes My Companion.
+
+Respon la pregunta de l''usuari de manera precisa i útil segons el context proporcionat. Sintetitza informació de diferents parts del context quan calgui. Proporciona explicacions detallades amb exemples quan sigui possible.
+
+Si l''usuari fa una pregunta de seguiment, utilitza tant l''historial de conversa com la base de coneixement per donar una resposta precisa. Si trobes informació parcial al context, utilitza-la per donar la millor resposta possible encara que sigui incompleta. Només digues que no tens informació si el context no conté absolutament res rellevant per a la consulta.
+
+IMPORTANT: Quan l''usuari pregunta en un idioma diferent de l''anglès (com el català o l''espanyol), respon en el mateix idioma. Quan el context contingui contingut en idiomes diferents del de la consulta de l''usuari, tradueix la informació rellevant per adaptar-la a l''idioma de la consulta.', '2025-06-26 09:17:21.415', 1);
+INSERT INTO public.settings VALUES (58, 'prompt', 'temperature', '0.5', '2025-06-26 09:17:21.419', 1);
+INSERT INTO public.settings VALUES (59, 'prompt', 'max_tokens', '500', '2025-06-26 09:17:21.421', 1);
+INSERT INTO public.settings VALUES (71, 'api', 'email_integration', 'gmail', '2025-09-22 09:45:03.855', 1);
+INSERT INTO public.settings VALUES (72, 'api', 'ai_model', 'gpt', '2025-09-22 09:45:03.865', 1);
+INSERT INTO public.settings VALUES (73, 'knowledge', 'knowledge_base_schedule', 'daily', '2025-09-22 09:45:03.871', 1);
+INSERT INTO public.settings VALUES (7, 'branding', 'brand_name', 'Nodus OS', '2025-09-22 09:45:03.876', 1);
+INSERT INTO public.settings VALUES (8, 'branding', 'primary_color', '#0052CC', '2025-09-22 09:45:03.881', 1);
+INSERT INTO public.settings VALUES (56, 'branding', 'logo_url', '/uploads/branding/logo-1764681727418.png', '2025-09-22 09:45:03.891', 1);
+INSERT INTO public.settings VALUES (57, 'branding', 'favicon_url', '/uploads/branding/favicon-1764681748412.png', '2025-09-22 09:45:03.897', 1);
+
+
+--
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: #db_user#
+--
+
+INSERT INTO public.users VALUES (1, 'admin', 'a487d00053fcbdee5b87353a2eed437b5f070e703de081a51b54471e4d65d346f13f9b7ab6499cad87a5273dbaf305941aa266b977b7a9daacbab0a4faa67db4.3b788383f673a74a58a22569594d7e62', 'admin', 'Admin User', '2025-07-04 10:32:07.683776', 'admin@mycompanion.es', 'Admin', 'User', 'Nodus', NULL, NULL, NULL, 2);
+
+
+--
+-- Name: contacts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: #db_user#
+--
+
+SELECT pg_catalog.setval('public.contacts_id_seq', 11, true);
+
+
+--
+-- Name: knowledge_collections_status_id_seq; Type: SEQUENCE SET; Schema: public; Owner: #db_user#
+--
+
+SELECT pg_catalog.setval('public.knowledge_collections_status_id_seq', 103, true);
+
+
+--
+-- Name: knowledge_processed_files_id_seq; Type: SEQUENCE SET; Schema: public; Owner: #db_user#
+--
+
+SELECT pg_catalog.setval('public.knowledge_processed_files_id_seq', 7, true);
+
+
+--
+-- Name: menu_roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: #db_user#
+--
+
+SELECT pg_catalog.setval('public.menu_roles_id_seq', 39, true);
+
+
+--
+-- Name: menus_id_seq; Type: SEQUENCE SET; Schema: public; Owner: #db_user#
+--
+
+SELECT pg_catalog.setval('public.menus_id_seq', 16, true);
+
+
+--
+-- Name: queries_id_seq; Type: SEQUENCE SET; Schema: public; Owner: #db_user#
+--
+
+SELECT pg_catalog.setval('public.queries_id_seq', 1646, true);
+
+
+--
+-- Name: roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: #db_user#
+--
+
+SELECT pg_catalog.setval('public.roles_id_seq', 5, true);
+
+
+--
+-- Name: settings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: #db_user#
+--
+
+SELECT pg_catalog.setval('public.settings_id_seq', 73, true);
+
+
+--
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: #db_user#
+--
+
+SELECT pg_catalog.setval('public.users_id_seq', 23, true);
+
+
+--
+-- Name: contacts contacts_pkey; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.contacts
+    ADD CONSTRAINT contacts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: contacts contacts_value_unique; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.contacts
+    ADD CONSTRAINT contacts_value_unique UNIQUE (value);
+
+
+--
+-- Name: knowledge_collections_status knowledge_collections_status_collection_name_key; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.knowledge_collections_status
+    ADD CONSTRAINT knowledge_collections_status_collection_name_key UNIQUE (collection_name);
+
+
+--
+-- Name: knowledge_collections_status knowledge_collections_status_pkey; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.knowledge_collections_status
+    ADD CONSTRAINT knowledge_collections_status_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: knowledge_processed_files knowledge_processed_files_collection_name_file_hash_key; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.knowledge_processed_files
+    ADD CONSTRAINT knowledge_processed_files_collection_name_file_hash_key UNIQUE (collection_name, file_hash);
+
+
+--
+-- Name: knowledge_processed_files knowledge_processed_files_pkey; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.knowledge_processed_files
+    ADD CONSTRAINT knowledge_processed_files_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: menu_roles menu_roles_menu_id_role_id_key; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.menu_roles
+    ADD CONSTRAINT menu_roles_menu_id_role_id_key UNIQUE (menu_id, role_id);
+
+
+--
+-- Name: menu_roles menu_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.menu_roles
+    ADD CONSTRAINT menu_roles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: menus menus_name_key; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.menus
+    ADD CONSTRAINT menus_name_key UNIQUE (name);
+
+
+--
+-- Name: menus menus_pkey; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.menus
+    ADD CONSTRAINT menus_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: queries queries_pkey; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.queries
+    ADD CONSTRAINT queries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: roles roles_name_key; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.roles
+    ADD CONSTRAINT roles_name_key UNIQUE (name);
+
+
+--
+-- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.roles
+    ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: session session_pkey; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.session
+    ADD CONSTRAINT session_pkey PRIMARY KEY (sid);
+
+
+--
+-- Name: settings settings_pkey; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.settings
+    ADD CONSTRAINT settings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users unique_email; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT unique_email UNIQUE (email);
+
+
+--
+-- Name: users unique_username; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT unique_username UNIQUE (username);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users users_username_unique; Type: CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_username_unique UNIQUE (username);
+
+
+--
+-- Name: IDX_session_expire; Type: INDEX; Schema: public; Owner: #db_user#
+--
+
+CREATE INDEX "IDX_session_expire" ON public.session USING btree (expire);
+
+
+--
+-- Name: contacts contacts_added_by_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.contacts
+    ADD CONSTRAINT contacts_added_by_users_id_fk FOREIGN KEY (added_by) REFERENCES public.users(id);
+
+
+--
+-- Name: menu_roles menu_roles_menu_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.menu_roles
+    ADD CONSTRAINT menu_roles_menu_id_fkey FOREIGN KEY (menu_id) REFERENCES public.menus(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menu_roles menu_roles_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.menu_roles
+    ADD CONSTRAINT menu_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: menus menus_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.menus
+    ADD CONSTRAINT menus_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.menus(id) ON DELETE SET NULL;
+
+
+--
+-- Name: settings settings_updated_by_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.settings
+    ADD CONSTRAINT settings_updated_by_users_id_fk FOREIGN KEY (updated_by) REFERENCES public.users(id);
+
+
+--
+-- Name: users users_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: #db_user#
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id);
+
+
+--
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: #db_user#
+--
+
+REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict K9uVuXBrzwseC8DkmMyaO2hC2dASQMXRvsh4b29FXPsIVfXWvsbkbcHSLnpxJfz
+

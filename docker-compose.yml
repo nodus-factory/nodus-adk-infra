@@ -9,9 +9,9 @@ services:
     image: postgres:15-alpine
     container_name: nodus-adk-postgres
     environment:
-      POSTGRES_USER: nodus
-      POSTGRES_PASSWORD: nodus_dev_password
-      POSTGRES_DB: nodus
+      POSTGRES_USER: ${POSTGRES_USER:-nodus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nodus_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-nodus}
     ports:
       - "5432:5432"
     volumes:
@@ -20,7 +20,7 @@ services:
     networks:
       - nodus-adk-internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nodus"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nodus}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -63,8 +63,8 @@ services:
     container_name: nodus-adk-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -88,7 +88,7 @@ services:
     restart: unless-stopped
     environment:
       # PostgreSQL connection
-      DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/langfuse_db
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/langfuse_db
       
       # NextAuth configuration
       NEXTAUTH_SECRET: ${LANGFUSE_SECRET_KEY:-langfuse_dev_secret_change_in_production}
@@ -133,98 +133,27 @@ services:
         max-file: "3"
 
   # ============================================================================
-  # OpenMemory (Memory Layer - MCP Server via nodus-memory fork)
+  # OpenMemory (Memory Layer - DISABLED, using direct Qdrant instead)
+  # Reason: JWT expiration in batch, no vector generation, complex setup
   # ============================================================================
 
-  openmemory:
-    image: ghcr.io/nodus-factory/openmemory:stable
-    container_name: nodus-adk-openmemory
-    ports:
-      - "8088:8080"
-    environment:
-      # Core Configuration
-      OM_PORT: 8080
-      OM_MODE: standard
-      OM_TIER: hybrid
-      
-      # Database Backend (PostgreSQL)
-      OM_METADATA_BACKEND: postgresql
-      OM_PG_HOST: postgres
-      OM_PG_PORT: 5432
-      OM_PG_DB: openmemory
-      OM_PG_USER: nodus
-      OM_PG_PASSWORD: nodus_dev_password
-      OM_PG_SCHEMA: public
-      OM_PG_TABLE: openmemory_memories
-      OM_PG_SSL: disable
-      
-      # Vector Backend (Qdrant for multi-user isolation)
-      OM_VECTOR_BACKEND: qdrant
-      OM_QDRANT_URL: http://qdrant:6333
-      OM_QDRANT_COLLECTION: openmemory_vectors
-      OM_QDRANT_USE_NAMESPACES: "true"  # Crucial per multi-tenancy!
-      
-      # Embeddings via LiteLLM
-      OM_EMBEDDINGS: openai
-      OM_OPENAI_API_KEY: sk-nodus-master-key
-      OM_OPENAI_BASE_URL: http://litellm:4000/v1
-      OM_OPENAI_MODEL: text-embedding-3-small
-      
-      # Memory Features
-      OM_DECAY_REINFORCE_ON_QUERY: "true"
-      OM_DECAY_INTERVAL_MINUTES: 1440  # Daily decay
-      OM_AUTO_REFLECT: "true"
-      OM_REFLECT_INTERVAL: 10
-      OM_USER_SUMMARY_INTERVAL: 30
-      
-      # HSG Configuration
-      OM_MIN_SCORE: 0.3
-      OM_MAX_PAYLOAD_SIZE: 1000000
-      
-      # LangGraph Integration
-      OM_LG_NAMESPACE: nodus-adk
-      OM_LG_MAX_CONTEXT: 50
-      OM_LG_REFLECTIVE: "true"
-      
-    volumes:
-      - ./data/openmemory:/data
-    networks:
-      - nodus-adk-internal
-    depends_on:
-      postgres:
-        condition: service_healthy
-      litellm:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    restart: unless-stopped
+  # DISABLED - OpenMemory replaced by direct Qdrant access
+  # Reasons: JWT expiration in batch, no vector generation, overly complex
+  # New approach: Direct Qdrant with separate collections for memory vs knowledge
+  
+  # openmemory:
+  #   build:
+  #     context: /Users/quirze/Factory/nodus-os/repos/nodus-memory/backend
+  #     dockerfile: Dockerfile
+  #   container_name: nodus-adk-openmemory
+  #   ...
 
-  openmemory-dashboard:
-    build:
-      context: /Users/quirze/Factory/nodus-os/repos/nodus-memory/dashboard
-      dockerfile: Dockerfile.prod
-    container_name: nodus-adk-openmemory-dashboard
-    ports:
-      - "3004:3000"  # External 3004 -> Internal 3000 (Langfuse usa 3000)
-    environment:
-      NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:8088
-      OPENMEMORY_API_URL: http://openmemory:8080
-      PORT: 3000
-    volumes:
-      - /Users/quirze/Factory/nodus-os/repos/nodus-memory/dashboard:/app
-      - /app/node_modules
-      - /app/.next
-    networks:
-      - nodus-adk-internal
-      - nodus-adk-edge
-    depends_on:
-      - openmemory
-    restart: unless-stopped
+  # openmemory-dashboard:
+  #   build:
+  #     context: /Users/quirze/Factory/nodus-os/repos/nodus-memory/dashboard
+  #     dockerfile: Dockerfile.prod
+  #   container_name: nodus-adk-openmemory-dashboard
+  #   ...
 
   # ============================================================================
   # Nodus OS Services (from cloned repos)
@@ -237,7 +166,7 @@ services:
     container_name: nodus-adk-backoffice
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus}
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
       QDRANT_API_KEY: ${QDRANT_API_KEY:-}
@@ -247,11 +176,23 @@ services:
       JWT_JWKS_URL: http://localhost:5001/.well-known/jwks.json
       JWT_ISSUER: backoffice
       JWT_AUDIENCE: backoffice
+      # Google Credentials for Token Generation
+      GOOGLE_WORKSPACE_SA_CLIENT_EMAIL: ${GOOGLE_WORKSPACE_SA_CLIENT_EMAIL}
+      GOOGLE_WORKSPACE_SA_PRIVATE_KEY: ${GOOGLE_WORKSPACE_SA_PRIVATE_KEY}
+      # Google OAuth2 for SSO Login
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+      GOOGLE_OAUTH_REDIRECT_URI: ${GOOGLE_OAUTH_REDIRECT_URI:-http://localhost:5001/auth/google/callback}
+      BACKOFFICE_PUBLIC_URL: ${BACKOFFICE_PUBLIC_URL:-http://localhost:5001}
+      BACKOFFICE_SERVICE_TOKEN: ${BACKOFFICE_SERVICE_TOKEN}
+      # Database migrations control
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
     ports:
       - "5001:5001"
     volumes:
       - ../nodus-backoffice:/app
       - /app/node_modules
+      - ./data/backoffice-uploads:/app/storage/uploads
     networks:
       - nodus-adk-internal
       - nodus-adk-edge
@@ -261,8 +202,7 @@ services:
       redis:
         condition: service_healthy
     user: root
-    entrypoint: []
-    command: sh -c "npm install && npm run dev"
+    entrypoint: ["/app/docker-entrypoint.sh"]
 
   llibreta:
     build:
@@ -270,8 +210,8 @@ services:
       dockerfile: Dockerfile
     container_name: nodus-adk-llibreta
     environment:
-      DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
-      AUTH_DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus}
+      AUTH_DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus}
       REDIS_URL: redis://redis:6379/0
       BACKOFFICE_URL: http://backoffice:5001
       ADK_RUNTIME_URL: http://adk-runtime:8080
@@ -306,6 +246,7 @@ services:
       REDIS_URL: redis://redis:6379/1
       BACKOFFICE_URL: http://backoffice:5001
       LOG_LEVEL: debug
+      BACKOFFICE_SERVICE_TOKEN: ${BACKOFFICE_SERVICE_TOKEN}
     ports:
       - "7443:7443"
     volumes:
@@ -321,31 +262,134 @@ services:
     command: sh -c "npm install --include=dev && npm run dev"
 
   # B2BRouter MCP Server (local deployment for development)
-  mcp-b2brouter:
-    build:
-      context: ../nodus-mcp-b2brouter
-      dockerfile: Dockerfile
-    container_name: nodus-adk-mcp-b2brouter
+  #mcp-b2brouter:
+  #  build:
+  #    context: ../nodus-mcp-b2brouter
+  #    dockerfile: Dockerfile
+  #  container_name: nodus-adk-mcp-b2brouter
+  #  environment:
+  #    PORT: 3001
+  #    B2BROUTER_API_KEY: ${B2BROUTER_API_KEY:-3194b66154a8f6fda9ebaa50c35d385ee354df23}
+  #    B2BROUTER_ENVIRONMENT: ${B2BROUTER_ENVIRONMENT:-staging}
+  #    NODE_ENV: development
+  #  ports:
+  #    - "3001:3001"
+  #  volumes:
+  #    - ../nodus-mcp-b2brouter:/app
+  #    - /app/node_modules
+  #  networks:
+  #    - nodus-adk-internal
+  #    - nodus-adk-edge
+  #  command: sh -c "npm install && npm run build && node dist/http-server.js"
+
+  # ============================================================================
+  # Additional Services (Commented - Enable when needed)
+  # ============================================================================
+
+  # Infisical Secrets Manager
+  # Note: Database initialization is handled automatically by 03-create-infisical.sh
+  # during PostgreSQL's first initialization (when volume is new)
+  infisical:
+    image: infisical/infisical:v0.149.0
+    container_name: nodus-adk-infisical
+    restart: unless-stopped
     environment:
-      PORT: 3001
-      B2BROUTER_API_KEY: ${B2BROUTER_API_KEY:-3194b66154a8f6fda9ebaa50c35d385ee354df23}
-      B2BROUTER_ENVIRONMENT: ${B2BROUTER_ENVIRONMENT:-staging}
-      NODE_ENV: development
+      ENCRYPTION_KEY: "${INFISICAL_ENCRYPTION_KEY}"
+      AUTH_SECRET: "${INFISICAL_AUTH_SECRET}"
+      DB_CONNECTION_URI: "postgresql://${INFISICAL_DB_USER:-infisical_service}:${INFISICAL_DB_PASSWORD:-change-me-infisical}@postgres:5432/${INFISICAL_DB_NAME:-infisical_compat149}"
+      REDIS_URL: "redis://redis:6379/2"
+      SITE_URL: "http://localhost:8081"
+      HOST: "0.0.0.0"
+      PORT: "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
-      - "3001:3001"
-    volumes:
-      - ../nodus-mcp-b2brouter:/app
-      - /app/node_modules
+      - "127.0.0.1:8081:8080"
     networks:
       - nodus-adk-internal
-      - nodus-adk-edge
-    command: sh -c "npm install && npm run build && node dist/http-server.js"
+
+  # Avatar Proxy Service
+  #avatar-proxy:
+  #  build:
+  #    context: ../nodus-backoffice/avatar/proxy
+  #  container_name: nodus-adk-avatar-proxy
+  #  restart: unless-stopped
+  #  environment:
+  #    NODE_ENV: ${NODE_ENV:-production}
+  #  networks:
+  #    - nodus-adk-internal
+  #    - nodus-adk-edge
+  #  env_file:
+  #    - ./.env
+  #  depends_on:
+  #    - backoffice
+
+  # Avatar Widget Service
+  #avatar-widget:
+  #  build:
+  #    context: ../nodus-backoffice/avatar/widget
+  #  container_name: nodus-adk-avatar-widget
+  #  restart: unless-stopped
+  #  environment:
+  #    NODE_ENV: ${NODE_ENV:-production}
+  #    WIDGET_PUBLIC_URL: https://${SERVER_NAME}/avatar
+  #    BACKEND_CHAT_URL: https://${SERVER_NAME}/api
+  #    HEYGEN_TOKEN_URL: https://${SERVER_NAME}/api/heygen/token
+  #  networks:
+  #    - nodus-adk-internal
+  #    - nodus-adk-edge
+  #  env_file:
+  #    - ./.env
+  #  depends_on:
+  #    - avatar-proxy
+
+  # Nginx Reverse Proxy
+  #nginx:
+  #  image: nginx:alpine
+  #  container_name: nodus-adk-nginx
+  #  restart: unless-stopped
+  #  ports:
+  #    - "80:80"
+  #  volumes:
+  #    - ../nodus-backoffice/nginx.conf:/etc/nginx/nginx.conf:ro
+  #  networks:
+  #    - nodus-adk-internal
+  #    - nodus-adk-edge
+  #  depends_on:
+  #    - backoffice
+  #    - avatar-widget
+  #    - avatar-proxy
+  #    - mcp-gateway
+  #  healthcheck:
+  #    test: ["CMD", "nginx", "-t"]
+  #    interval: 30s
+  #    timeout: 10s
+  #    retries: 3
+  #    start_period: 30s
+
+  # OCR Service
+  #ocr-service:
+  #  build:
+  #    context: ../nodus-backoffice/services/ocr
+  #    dockerfile: Dockerfile
+  #  container_name: nodus-adk-ocr-service
+  #  restart: unless-stopped
+  #  environment:
+  #    OCR_TOKEN: ${OCR_TOKEN:-supersecrettoken}
+  #    OCR_LANG: ${OCR_LANG:-cat,spa,eng}
+  #  networks:
+  #    - nodus-adk-internal
+  #  env_file:
+  #    - ./.env
 
   # ============================================================================
   # AI Gateway (LiteLLM Self-Hosted)
   # ============================================================================
   litellm:
-    image: ghcr.io/berriai/litellm:main-latest
+    image: ghcr.io/berriai/litellm:main-v1.52.11  # Debian-based, supports libsndfile. Note: No modern dashboard, only Swagger UI
     container_name: nodus-adk-litellm
     ports:
       - "4000:4000"
@@ -353,22 +397,23 @@ services:
       - ./config/litellm:/app/config
     command: [ "--config", "/app/config/litellm_config.yaml", "--port", "4000", "--detailed_debug" ]
     environment:
-      - DATABASE_URL=postgresql://nodus:nodus_dev_password@postgres:5432/litellm_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/litellm_db
       - STORE_MODEL_IN_DB=True
       
       # Provider API Keys
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - GEMINI_API_KEY=${GOOGLE_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       
       # Master Key (used for API auth and Admin UI login)
       # Admin UI: username=admin, password=LITELLM_MASTER_KEY
-      - LITELLM_MASTER_KEY=sk-nodus-master-key
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-nodus-master-key}
       
       # Langfuse integration for observability
-      - LANGFUSE_PUBLIC_KEY=pk-lf-a401fb0c-6ee3-4636-afd4-803b9dfe4aaf
-      - LANGFUSE_SECRET_KEY=sk-lf-ccb62e83-9148-49f8-8858-ff3c963bb7a8
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-pk-lf-a401fb0c-6ee3-4636-afd4-803b9dfe4aaf}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-sk-lf-ccb62e83-9148-49f8-8858-ff3c963bb7a8}
       - LANGFUSE_HOST=http://langfuse:3000
     networks:
       - nodus-adk-internal
@@ -393,8 +438,8 @@ services:
       # Langfuse observability for A2A agents
       LANGFUSE_ENABLED: ${LANGFUSE_ENABLED:-true}
       LANGFUSE_HOST: http://langfuse:3000
-      LANGFUSE_PUBLIC_KEY: pk-lf-a401fb0c-6ee3-4636-afd4-803b9dfe4aaf
-      LANGFUSE_SECRET_KEY: sk-lf-ccb62e83-9148-49f8-8858-ff3c963bb7a8
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-a401fb0c-6ee3-4636-afd4-803b9dfe4aaf}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ccb62e83-9148-49f8-8858-ff3c963bb7a8}
       
       # OpenTelemetry configuration
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://langfuse:3000/api/public/ingestion}
@@ -416,7 +461,7 @@ services:
     container_name: nodus-adk-runtime
     environment:
       # Database & Services
-      DATABASE_URL: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus}
       REDIS_URL: redis://redis:6379/0
       BACKOFFICE_URL: http://backoffice:5001
       MCP_GATEWAY_URL: http://mcp-gateway:7443
@@ -425,7 +470,7 @@ services:
       
       # AI Models (via LiteLLM proxy)
       # Using Gemini model recognized by ADK, but LiteLLM routes it
-      ADK_MODEL: ${ADK_MODEL:-gemini-2.0-flash-exp}
+      ADK_MODEL: ${ADK_MODEL:-gpt-4o}
       ADK_PROJECT_ID: ${ADK_PROJECT_ID:-}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}  # Not used - routed via LiteLLM
       
@@ -437,16 +482,16 @@ services:
       # Langfuse Observability
       LANGFUSE_ENABLED: ${LANGFUSE_ENABLED:-true}
       LANGFUSE_HOST: http://langfuse:3000
-      LANGFUSE_PUBLIC_KEY: pk-lf-a401fb0c-6ee3-4636-afd4-803b9dfe4aaf
-      LANGFUSE_SECRET_KEY: sk-lf-ccb62e83-9148-49f8-8858-ff3c963bb7a8
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-a401fb0c-6ee3-4636-afd4-803b9dfe4aaf}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ccb62e83-9148-49f8-8858-ff3c963bb7a8}
       LANGFUSE_SDK_INTEGRATION: nodus-adk
       
       # LiteLLM Proxy Configuration (unified AI gateway for ALL models)
       # ALL LLM calls (OpenAI, Gemini, Claude) go through this proxy
       OPENAI_API_BASE: http://litellm:4000/v1
-      OPENAI_API_KEY: sk-nodus-master-key
+      OPENAI_API_KEY: ${LITELLM_MASTER_KEY:-sk-nodus-master-key}
       LITELLM_PROXY_API_BASE: http://litellm:4000
-      LITELLM_PROXY_API_KEY: sk-nodus-master-key
+      LITELLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY:-sk-nodus-master-key}
       
       # OpenTelemetry Configuration
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://langfuse:3000/api/public/ingestion}
@@ -504,5 +549,3 @@ volumes:
   # Ephemeral volumes only
   llibreta_node_modules:
     name: nodus-adk-llibreta-node-modules
-
-
