@@ -171,28 +171,27 @@ services:
       QDRANT_URL: http://qdrant:6333
       QDRANT_API_KEY: ${QDRANT_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      NODE_ENV: development
+      NODE_ENV: production
+      RUN_MIGRATIONS: "false"  # Migrations already applied
       PORT: 5001
       JWT_JWKS_URL: http://localhost:5001/.well-known/jwks.json
       JWT_ISSUER: backoffice
       JWT_AUDIENCE: backoffice
+      JWT_TTL_SECONDS: 86400
+      OAUTH_ACCESS_TOKEN_TTL_SECONDS: 86400
       # Google Credentials for Token Generation
       GOOGLE_WORKSPACE_SA_CLIENT_EMAIL: ${GOOGLE_WORKSPACE_SA_CLIENT_EMAIL}
       GOOGLE_WORKSPACE_SA_PRIVATE_KEY: ${GOOGLE_WORKSPACE_SA_PRIVATE_KEY}
-      # Google OAuth2 for SSO Login
-      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
-      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
-      GOOGLE_OAUTH_REDIRECT_URI: ${GOOGLE_OAUTH_REDIRECT_URI:-http://localhost:5001/auth/google/callback}
-      BACKOFFICE_PUBLIC_URL: ${BACKOFFICE_PUBLIC_URL:-http://localhost:5001}
       BACKOFFICE_SERVICE_TOKEN: ${BACKOFFICE_SERVICE_TOKEN}
-      # Database migrations control
-      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+      # Google OAuth (for Google SSO)
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET}
+      BACKOFFICE_PUBLIC_URL: ${BACKOFFICE_PUBLIC_URL:-http://localhost:5001}
     ports:
       - "5001:5001"
-    volumes:
-      - ../nodus-backoffice:/app
-      - /app/node_modules
-      - ./data/backoffice-uploads:/app/storage/uploads
+    # volumes:  # Production mode - using compiled code from image
+    #   - ../nodus-backoffice:/app
+    #   - /app/node_modules
     networks:
       - nodus-adk-internal
       - nodus-adk-edge
@@ -201,8 +200,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    user: root
-    entrypoint: ["/app/docker-entrypoint.sh"]
+    # user: root  # Use Dockerfile default (node user)
+    # entrypoint: []  # Use Dockerfile default (docker-entrypoint.sh with migrations)
+    # command: sh -c "npm start"  # Use Dockerfile default CMD
 
   llibreta:
     build:
@@ -218,6 +218,10 @@ services:
       PERSONAL_ASSISTANT_ENGINE: ${PERSONAL_ASSISTANT_ENGINE:-graph}
       NODE_ENV: development
       PORT: 5002
+      # Google OAuth (for Google SSO)
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET}
+      GOOGLE_OAUTH_REDIRECT_URI: http://localhost:5002/api/auth/google/callback
     ports:
       - "5002:5002"
     volumes:
