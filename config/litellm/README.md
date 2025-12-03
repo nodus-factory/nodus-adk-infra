@@ -123,3 +123,4 @@ Els models suportats depenen de la configuració de LiteLLM. Per defecte suporta
 - Ollama (models locals)
 - I molts més: https://docs.litellm.ai/docs/providers
 
+

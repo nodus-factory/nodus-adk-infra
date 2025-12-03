@@ -61,3 +61,4 @@ EOF
 
 echo "✅ OpenMemory database initialized successfully"
 
+

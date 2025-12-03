@@ -114,3 +114,4 @@ log_info "✅ Restauració completada!"
 log_info ""
 log_warn "💡 Prova el login a: http://localhost:5002"
 
+

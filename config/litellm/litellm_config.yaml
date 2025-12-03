@@ -81,6 +81,12 @@ model_list:
   # ============================================================================
   # Groq Models (Fast Inference)
   # ============================================================================
+  - model_name: gpt-oss-120b
+    litellm_params:
+      model: groq/openai/gpt-oss-120b
+      api_key: os.environ/GROQ_API_KEY
+      timeout: 60
+  
   - model_name: whisper-1
     litellm_params:
       model: groq/whisper-large-v3

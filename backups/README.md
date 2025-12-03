@@ -102,3 +102,4 @@ rclone copy drive:nodus-adk-backups/nodus_YYYYMMDD_HHMMSS.sql.gz backups/databas
 
 **Data última actualització:** 2025-11-25
 
+

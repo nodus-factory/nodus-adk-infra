@@ -498,3 +498,4 @@ gunzip -c backup.sql.gz | docker exec -i nodus-adk-postgres psql -U nodus -d pos
 **Data**: 26 Novembre 2025  
 **Workspace**: `nodus-os-adk`
 
+
