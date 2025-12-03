@@ -11,7 +11,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-nodus}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nodus_dev_password}
-      POSTGRES_DB: ${POSTGRES_DB:-nodus}
+      POSTGRES_DB: ${POSTGRES_DB:-nodus_db}
     ports:
       - "5432:5432"
     volumes:
@@ -166,7 +166,7 @@ services:
     container_name: nodus-adk-backoffice
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus_db}
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
       QDRANT_API_KEY: ${QDRANT_API_KEY:-}
@@ -210,8 +210,8 @@ services:
       dockerfile: Dockerfile
     container_name: nodus-adk-llibreta
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus}
-      AUTH_DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus_db}
+      AUTH_DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus_db}
       REDIS_URL: redis://redis:6379/0
       BACKOFFICE_URL: http://backoffice:5001
       ADK_RUNTIME_URL: http://adk-runtime:8080
@@ -235,6 +235,34 @@ services:
         condition: service_started
     user: "0:0"
     command: sh -c "chown -R 1000:1000 /app/node_modules 2>/dev/null || true && chown -R 1000:1000 /app 2>/dev/null || true && su node -c 'cd /app && npm install --include=dev && npx concurrently -n backend,frontend -c bgBlue.bold,bgMagenta.bold \"npm run dev:simple\" \"vite\"'"
+
+  recorder-pwa:
+    build:
+      context: ..
+      dockerfile: nodus-recorder-pwa/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5001}
+    container_name: nodus-adk-recorder-pwa
+    restart: unless-stopped
+    environment:
+      BACKOFFICE_URL: ${BACKOFFICE_URL:-http://backoffice:5001}
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:5001}
+      PORT: 5003
+      NODE_ENV: ${NODE_ENV:-production}
+    ports:
+      - "5003:5003"
+    networks:
+      - nodus-adk-internal
+      - nodus-adk-edge
+    depends_on:
+      backoffice:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   mcp-gateway:
     build:
@@ -461,7 +489,7 @@ services:
     container_name: nodus-adk-runtime
     environment:
       # Database & Services
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nodus}:${POSTGRES_PASSWORD:-nodus_dev_password}@postgres:5432/${POSTGRES_DB:-nodus_db}
       REDIS_URL: redis://redis:6379/0
       BACKOFFICE_URL: http://backoffice:5001
       MCP_GATEWAY_URL: http://mcp-gateway:7443

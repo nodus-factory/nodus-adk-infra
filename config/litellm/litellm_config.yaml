@@ -116,7 +116,9 @@ general_settings:
   master_key: sk-nodus-master-key
   
   # Database settings (store model config in PostgreSQL)
-  database_url: postgresql://nodus:nodus_dev_password@postgres:5432/nodus
+  # Reads from DATABASE_URL environment variable set in docker-compose.yml
+  # Note: Prisma reads DATABASE_URL directly from environment, not from this config
+  # database_url is optional if DATABASE_URL env var is set
   
   # Langfuse integration for observability
   langfuse_public_key: ${LANGFUSE_PUBLIC_KEY}
