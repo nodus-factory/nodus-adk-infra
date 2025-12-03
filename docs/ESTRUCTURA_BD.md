@@ -57,7 +57,7 @@ L'aplicació Nodus OS ADK utilitza múltiples bases de dades PostgreSQL per sepa
 - **Propòsit**: Gestió centralitzada de secrets i credencials
 - **Serveis que l'utilitzen**:
   - `infisical` - Gestor de secrets
-- **Inicialització**: `03-create-infisical.sh`
+- **Inicialització**: `03-init-infisical.sh`
 - **Usuari dedicat**: `infisical_service` amb password `change-me-infisical`
 - **Taules**: Generades automàticament per Infisical
   - Secrets, projectes, entorns, etc.
@@ -127,7 +127,7 @@ Els scripts d'inicialització s'executen automàticament quan PostgreSQL s'inici
 2. **`01-init-litellm.sh`** - Crea `litellm_db` amb extensions
 3. **`02-init-langfuse.sh`** - Crea `langfuse_db` amb extensions
 4. **`02-migrations.sh`** - Aplica migracions SQL de Drizzle
-5. **`03-create-infisical.sh`** - Crea usuari i base de dades per Infisical
+5. **`03-init-infisical.sh`** - Crea usuari i base de dades per Infisical
 6. **`03-init-openmemory.sh`** - Crea `openmemory` i taula `adk_conversation_memory`
 
 ## Ordre d'Execució
@@ -137,7 +137,7 @@ Els scripts s'executen en ordre alfabètic:
 2. `01-init-litellm.sh` (crea `litellm_db`)
 3. `02-init-langfuse.sh` (crea `langfuse_db`)
 4. `02-migrations.sh` (aplica migracions a `nodus_db`)
-5. `03-create-infisical.sh` (crea `infisical_compat149`)
+5. `03-init-infisical.sh` (crea `infisical_compat149`)
 6. `03-init-openmemory.sh` (crea `openmemory`)
 
 ## Persistència

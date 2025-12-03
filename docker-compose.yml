@@ -315,7 +315,7 @@ services:
   # ============================================================================
 
   # Infisical Secrets Manager
-  # Note: Database initialization is handled automatically by 03-create-infisical.sh
+  # Note: Database initialization is handled automatically by 03-init-infisical.sh
   # during PostgreSQL's first initialization (when volume is new)
   infisical:
     image: infisical/infisical:v0.149.0
