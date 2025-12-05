@@ -81,11 +81,27 @@ model_list:
   # ============================================================================
   # Groq Models (Fast Inference)
   # ============================================================================
+  - model_name: llama-3.3-70b-versatile
+    litellm_params:
+      model: groq/llama-3.3-70b-versatile
+      api_key: os.environ/GROQ_API_KEY
+      timeout: 60
+  
   - model_name: gpt-oss-120b
     litellm_params:
       model: groq/openai/gpt-oss-120b
       api_key: os.environ/GROQ_API_KEY
       timeout: 60
+  
+  - model_name: moonshotai/kimi-k2-instruct-0905
+    litellm_params:
+      model: groq/moonshotai/kimi-k2-instruct-0905
+      api_key: os.environ/GROQ_API_KEY
+      timeout: 60
+      max_tokens: 4096
+    model_info:
+      max_input_tokens: 128000
+      max_output_tokens: 4096
   
   - model_name: whisper-1
     litellm_params:
