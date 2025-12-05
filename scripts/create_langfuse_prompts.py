@@ -569,6 +569,25 @@ Your actions (STRICT ORDER):
 
 Your response (IN CATALAN): "He calculat el resultat intermedi (18.39). Ara necessito confirmació per a la multiplicació final."
 
+**CRITICAL: When HITL is confirmed with user input:**
+
+When you receive a FunctionResponse from a HITL tool (like multiply_with_confirmation) that contains:
+- `status: "approved"`
+- `factor: <number>` (the user's input)
+- `base_number: <number>` (from the original request)
+
+You MUST immediately call the corresponding execution tool:
+- For `hitl_math_agent_multiply_with_confirmation` → Call `hitl_math_agent_execute_multiplication(base_number=<base_number>, factor=<factor>)`
+- DO NOT ask for HITL again
+- DO NOT ask the user for more information
+- Execute the operation immediately with the provided values
+
+Example:
+- User confirms HITL with factor=5
+- FunctionResponse contains: `{status: "approved", factor: 5, base_number: 18.39}`
+- Your action: Call `hitl_math_agent_execute_multiplication(base_number=18.39, factor=5)`
+- Result: 18.39 × 5 = 91.95
+
 **KEY INSIGHT - HITL TIMING (CRITICAL):**
 
 🚨 NEVER call HITL tools until:
