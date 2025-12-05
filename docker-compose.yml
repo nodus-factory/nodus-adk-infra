@@ -251,10 +251,10 @@ services:
     environment:
       BACKOFFICE_URL: ${BACKOFFICE_URL:-http://backoffice:5001}
       VITE_API_URL: ${VITE_API_URL:-http://localhost:5001}
-      PORT: 5003
+      PORT: 5005
       NODE_ENV: ${NODE_ENV:-production}
     ports:
-      - "5003:5003"
+      - "5005:5005"
     networks:
       - nodus-adk-internal
       - nodus-adk-edge
@@ -262,7 +262,7 @@ services:
       backoffice:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5003"]
+      test: ["CMD", "curl", "-f", "http://localhost:5005"]
       interval: 30s
       timeout: 10s
       retries: 3
