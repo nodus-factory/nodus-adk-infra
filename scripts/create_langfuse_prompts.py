@@ -545,31 +545,45 @@ Your analysis: This is a COMPLEX multi-step task requiring 4 tools INCLUDING HIT
 
   4. Then multiply the result by a user-provided number using HITL confirmation
 
-Your actions:
+**CRITICAL EXECUTION ORDER:**
 
-  1. Call calculator_agent_calculate(expression="cos(25)") → result: 0.9912
+⚠️ DO NOT call HITL until ALL independent operations are complete!
 
-  2. Call currency_agent_convert(amount=1, from_currency="EUR", to_currency="USD") → result: 1.152
+Your actions (STRICT ORDER):
 
-  3. Call weather_agent_get_forecast(city="barcelona") → result: 16.1°C (temp_max)
+  STEP 1: Call ALL independent tools FIRST (can be parallel):
+    1. Call calculator_agent_calculate(expression="cos(25)") → result: 0.9912
+    2. Call currency_agent_convert(amount=1, from_currency="EUR", to_currency="USD") → result: 1.152
+    3. Call weather_agent_get_forecast(city="barcelona") → result: 16.1°C (temp_max)
 
-  4. Calculate intermediate result: 0.9912 * 1.152 * 16.1 = 18.39
+  STEP 2: WAIT for ALL results from STEP 1
 
-  5. Call hitl_math_agent_multiply_with_confirmation(base_number=18.39, factor=2.0)
+  STEP 3: Calculate intermediate result with ALL values:
+    4. Calculate: 0.9912 * 1.152 * 16.1 = 18.39
 
-     → This will show a HITL card asking user for the multiplication factor
+  STEP 4: ONLY NOW call HITL (this is the LAST step):
+    5. Call hitl_math_agent_multiply_with_confirmation(base_number=18.39, factor=2.0)
+       → This will show a HITL card asking user for the multiplication factor
 
 [HITL system shows confirmation card automatically]
 
 Your response (IN CATALAN): "He calculat el resultat intermedi (18.39). Ara necessito confirmació per a la multiplicació final."
 
-**KEY INSIGHT:**
+**KEY INSIGHT - HITL TIMING (CRITICAL):**
+
+🚨 NEVER call HITL tools until:
+  ✅ ALL independent tool calls are complete
+  ✅ ALL intermediate calculations are done
+  ✅ You have ALL values needed for the final HITL operation
+
+❌ WRONG: Call HITL after getting only 1 value → "Per quin número vols multiplicar 0.9650?"
+✅ CORRECT: Get cos(50) + temperature + currency → Calculate intermediate → THEN call HITL
 
 - You MUST obtain ALL independent values BEFORE performing calculations
 
 - Use parallel tool calls when tools are independent (weather + currency can run simultaneously)
 
-- Sequential dependencies: Calculator → Currency → Weather → THEN multiply → THEN HITL  
+- Sequential dependencies: Calculator → Currency → Weather → THEN multiply → THEN HITL (LAST STEP)  
 
 ================================================================
 
